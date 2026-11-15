@@ -7,5 +7,4 @@ rule-4.png   謎4 ババ抜き
 rule-5a.png  謎5 対応表の紙
 rule-5b.png  謎5 式の紙
 rule-6a.png  謎6 ポリオミノ 盤面の紙
-rule-6b.png  謎6 ポリオミノ ピースの紙
 rule-final.png 最終問題(解答欄の紙)

@@ -1,13 +1,13 @@
 const $=s=>document.querySelector(s),R=n=>Math.random()*n|0;
 const shuf=a=>{a=[...a];for(let i=a.length;i>1;){const j=R(i--);[a[i],a[j]]=[a[j],a[i]]}return a};
 const pick=n=>shuf([...Array(98).keys()]).slice(0,n);
-const G=(i,s=34)=>glyph(i,s),row=a=>`<span class="row">${a.map(i=>G(i)).join('')}</span>`;
+const G=(i,s=36)=>`<span class="gw" style="--k:${s/36}">${glyph(i,s)}</span>`,row=a=>`<span class="row">${a.map(i=>G(i,34)).join('')}</span>`;
 const NAMES=['謎1 五十音表','謎2 スケルトン','謎3 しりとり','謎4 ババ抜き','謎5 覆面算','最終解答'];
 const fmt=ms=>{const s=ms/1000;return String(s/60|0).padStart(2,'0')+':'+(s%60).toFixed(1).padStart(4,'0')};
 // ---- 謎1: 五十音表(横長10列×5行)。紙A=表、紙B=①②③の位置 ----
 function g0(){const ids=pick(50),cl=shuf([...Array(50).keys()]).slice(0,3);
  const tb=f=>'<table class="t">'+[0,1,2,3,4].map(r=>'<tr>'+[...Array(10).keys()].map(c=>`<td>${f(r*10+c)}</td>`).join('')+'</tr>').join('')+'</table>';
- return{ans:cl.map(i=>ids[i]),papers:[tb(i=>G(ids[i],32)),tb(i=>cl.includes(i)?`<b class="mk">${'①②③'[cl.indexOf(i)]}</b>`:'')],hint:'2枚の紙を見比べよう。①②③の位置にある文字を、順に答えよう。'}}
+ return{ans:cl.map(i=>ids[i]),papers:[tb(i=>G(ids[i],32)),tb(i=>cl.includes(i)?`<b class="mk">${'①②③'[cl.indexOf(i)]}</b>`:'')]}}
 // ---- 謎2: スケルトン(6単語・盤面3種×転置・解は1通り) ----
 const TP=[[[0,0,'H',5],[0,0,'V',4],[0,4,'V',5],[3,0,'H',3],[3,2,'V',4],[6,2,'H',5]],
 [[0,0,'V',5],[0,0,'H',4],[0,3,'V',6],[2,0,'H',4],[4,0,'H',4],[5,3,'H',4]],
@@ -20,68 +20,82 @@ function g1(){const T=TP[R(3)],tr=R(2);
  const S=T.map(([r,c,d,l])=>[...Array(l).keys()].map(i=>{const a=r+(d=='V'?i:0),b=c+(d=='H'?i:0);return(tr?[b,a]:[a,b])+''}));
  const ks=[...new Set(S.flat())],H=Math.max(...ks.map(k=>+k.split(',')[0]))+1,C=Math.max(...ks.map(k=>+k.split(',')[1]))+1;
  let mp,W,t=0;do{const ids=pick(ks.length);mp={};ks.forEach((k,i)=>mp[k]=ids[i]);W=S.map(s=>s.map(k=>mp[k]))}while(cnt(S,W)!=1&&++t<80);
- const st=shuf(ks).slice(0,3);let b=`<div class="bd" style="grid-template-columns:repeat(${C},36px)">`;
+ const st=shuf(ks).slice(0,3);let b=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;
  for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c;b+=mp[k]===undefined?'<i></i>':`<b>${st.includes(k)?'①②③'[st.indexOf(k)]:''}</b>`}
  return{ans:st.map(k=>mp[k]),papers:[`<div class="sk">${b}</div><div class="wl">${shuf(W).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`],hint:'右のことばを、すべて左の盤面に入れよう。①②③のマスの文字を、順に答えよう。'}}
-// ---- 謎3: しりとり ----
-function g2(){const ids=pick(11),a=ids.slice(0,6),x=ids.slice(6),W=[0,1,2,3,4].map(k=>[a[k],x[k],a[k+1]]);
- const cl=shuf([...Array(15).keys()]).slice(0,3).sort((p,q)=>p-q);
- return{ans:cl.map(i=>W[i/3|0][i%3]),papers:[shuf(W).map(w=>`<div style="margin:8px 0">${row(w)}</div>`).join('')],hint:'しりとりでつなごう。'+cl.map(i=>`${(i/3|0)+1}つ目の${i%3+1}文字目`).join('、')+'を、順に答えよう。'}}
+// ---- 謎3: しりとり(6単語・同頭/同末をあえて重ね、つなぎ方は1通り・紙にバラバラ配置) ----
+const hp=ws=>{let n=0;const f=(l,u)=>{if(n>1)return;if(u==63){n++;return}for(let i=0;i<6;i++)if(!(u>>i&1)&&(l<0||ws[l][2]==ws[i][0]))f(i,u|1<<i)};f(-1,0);return n};
+function g2(){let W,t=0,ok=0;
+ do{const ids=pick(14),pool=ids.slice(0,4+R(3)),mid=ids.slice(7),a=[...Array(7)].map(()=>pool[R(pool.length)]);
+  W=[0,1,2,3,4,5].map(k=>[a[k],mid[k],a[k+1]]);
+  const dup=12-new Set(W.map(w=>w[0])).size-new Set(W.map(w=>w[2])).size;
+  ok=dup>=2&&hp(W)==1}while(!ok&&++t<30000);
+ const cl=shuf([...Array(18).keys()]).slice(0,3).map(i=>[i/3|0,i%3]),pos=[];
+ W.forEach(()=>{let p;for(let k=0;k<500;k++){p=[Math.random()*6.2,Math.random()*6.8];if(pos.every(q=>Math.abs(q[0]-p[0])>3.5||Math.abs(q[1]-p[1])>1.5))break}pos.push(p)});
+ return{ans:cl.map(([k,m])=>W[k][m]),tries:t,papers:[`<div class="sc" style="height:calc(var(--u)*8)">${W.map((w,i)=>`<span style="left:calc(var(--u)*${pos[i][0]});top:calc(var(--u)*${pos[i][1]});transform:rotate(${R(13)-6}deg)">${row(w)}</span>`).join('')}</div><div class="cl">${cl.map(([k,m])=>`<span>${k+1}-${m+1}</span>`).join('')}</div>`]}}
 // ---- 謎4: ババ抜き(バラバラ配置、消して左から読む) ----
 function g3(){const ids=pick(9),sg=ids.slice(6);let a=[];for(let i=0;i<6;i++)a.push(ids[i],ids[i]);a.push(...sg);a=shuf(a);
- let P;for(let t=0;t<60;t++){P=[];let bad=0;for(const g of a){const s=sg.includes(g);let ok=0;
-  for(let k=0;k<300&&!ok;k++){const p=[R(360),R(260),s];if(P.every(q=>Math.hypot(q[0]-p[0],q[1]-p[1])>54&&!(q[2]&&s&&Math.abs(q[0]-p[0])<34))){P.push(p);ok=1}}
+ let P;for(let t=0;t<80;t++){P=[];let bad=0;for(const g of a){const s=sg.includes(g);let ok=0;
+  for(let k=0;k<400&&!ok;k++){const p=[Math.random()*8.2,Math.random()*6.4,s];if(P.every(q=>Math.hypot(q[0]-p[0],q[1]-p[1])>1.5&&!(q[2]&&s&&Math.abs(q[0]-p[0])<1))){P.push(p);ok=1}}
   if(!ok){bad=1;break}}if(!bad)break}
  const ans=a.map((g,i)=>[g,P[i][0]]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[0]);
- return{ans,papers:[`<div class="sc">${a.map((g,i)=>`<span style="left:${P[i][0]+10}px;top:${P[i][1]+10}px;transform:rotate(${R(31)-15}deg)">${G(g,40)}</span>`).join('')}</div>`],hint:'同じ文字のペアを消そう。残った文字を、左から順に答えよう。'}}
+ return{ans,papers:[`<div class="sc" style="height:calc(var(--u)*7.6)">${a.map((g,i)=>`<span style="left:calc(var(--u)*${P[i][0]});top:calc(var(--u)*${P[i][1]});transform:rotate(${R(31)-15}deg)">${G(g,40)}</span>`).join('')}</div>`]}}
 // ---- 謎5: 覆面算 ----
 function g4(){const m=pick(10),x=R(377)+123,y=R(400)+100,n=v=>String(v).split('').map(d=>m[+d]);
- return{ans:n(x+y),papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(i=>`<td>${G(i,30)}</td>`).join('')+'</tr></table>',`<div class="ex">${row(n(x))} ＋ ${row(n(y))} ＝ ？</div>`],hint:'対応表で数字にして計算しよう。答えを文字に直して答えよう。'}}
+ return{ans:n(x+y),papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(i=>`<td>${G(i,30)}</td>`).join('')+'</tr></table>',`<div class="ex">${row(n(x))} + ${row(n(y))} = ?</div>`]}}
 // ---- 謎6: ポリオミノ(盤面5×6、解は回転・反転込みで1通り) ----
 const norm=cs=>{const mr=Math.min(...cs.map(p=>p[0])),mc=Math.min(...cs.map(p=>p[1]));return cs.map(p=>[p[0]-mr,p[1]-mc]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])};
 const orients=cs=>{const s=new Map();let p=cs;for(let f=0;f<2;f++){for(let r=0;r<4;r++){p=p.map(([a,b])=>[b,-a]);const q=norm(p);s.set(q+'',q)}p=p.map(([a,b])=>[a,-b])}return[...s.values()]};
-function solve(h,w,P,cap=2,mask){const O=P.map(orients),g=mask?mask.slice():Array(h*w).fill(0);let n=0;
+function solve(h,w,P,cap=2,mask){const O=P.map(p=>[norm(p)]),g=mask?mask.slice():Array(h*w).fill(0);let n=0;
  (function f(u){const e=g.indexOf(0);if(e<0){n++;return}const er=e/w|0,ec=e%w;
   for(let i=0;i<P.length&&n<cap;i++){if(u>>i&1)continue;for(const o of O[i]){const dr=er-o[0][0],dc=ec-o[0][1];
    if(o.every(([a,b])=>{const r=a+dr,c=b+dc;return r>=0&&r<h&&c>=0&&c<w&&!g[r*w+c]})){o.forEach(([a,b])=>g[(a+dr)*w+b+dc]=1);f(u|1<<i);o.forEach(([a,b])=>g[(a+dr)*w+b+dc]=0)}}}})(0);return n}
 const tf=(cs,k,f)=>{let p=cs;for(let i=0;i<k;i++)p=p.map(([a,b,g])=>[b,-a,g]);if(f)p=p.map(([a,b,g])=>[a,-b,g]);const mr=Math.min(...p.map(q=>q[0])),mc=Math.min(...p.map(q=>q[1]));return p.map(([a,b,g])=>[a-mr,b-mc,g])};
 const PEN=['01,02,10,11,21','00,10,20,30,40','00,10,20,30,31','01,11,20,21,30','00,01,10,11,20','00,01,02,11,21','00,02,10,11,12','00,10,20,21,22','00,10,11,21,22','01,10,11,12,21','01,10,11,21,31','00,01,11,21,22'].map(s=>s.split(',').map(x=>[+x[0],+x[1]]));
-function mkP(){for(let T=0;T<5000;T++){const set=new Set();let P=[],ok=1;
-  for(const t of shuf(PEN).slice(0,6)){const os=orients(t);let pl=0;
-   for(let k=0;k<80&&!pl;k++){const o=os[R(os.length)],dr=R(9),dc=R(9),cs=o.map(([a,b])=>[a+dr,b+dc]);
-    if(cs.some(c=>set.has(c+'')))continue;
-    if(P.length&&!cs.some(([r,c])=>[[r-1,c],[r+1,c],[r,c-1],[r,c+1]].some(z=>set.has(z+''))))continue;
-    cs.forEach(c=>set.add(c+''));P.push(cs);pl=1}
-   if(!pl){ok=0;break}}
+function mkP(){for(let T=0;T<2000;T++){const set=new Set();let P=[],ok=1,r0=99,r1=-99,c0=99,c1=-99;
+  const add=cs=>{cs.forEach(([r,c])=>{set.add(r+','+c);r0=Math.min(r0,r);r1=Math.max(r1,r);c0=Math.min(c0,c);c1=Math.max(c1,c)});P.push(cs)};
+  for(const t of shuf(PEN).slice(0,6)){const os=orients(t),cand=[];
+   if(!P.length){add(os[R(os.length)].map(([a,b])=>[a+4,b+4]));continue}
+   for(const o of os)for(let dr=0;dr<12;dr++)for(let dc=0;dc<12;dc++){const cs=o.map(([a,b])=>[a+dr,b+dc]);
+    if(cs.some(([r,c])=>set.has(r+','+c)))continue;
+    if(!cs.some(([r,c])=>set.has((r-1)+','+c)||set.has((r+1)+','+c)||set.has(r+','+(c-1))||set.has(r+','+(c+1))))continue;
+    let a0=r0,a1=r1,b0=c0,b1=c1;cs.forEach(([r,c])=>{a0=Math.min(a0,r);a1=Math.max(a1,r);b0=Math.min(b0,c);b1=Math.max(b1,c)});
+    const h=a1-a0+1,w=b1-b0+1;if(h>7||w>7)continue;cand.push([Math.max(h,w)*10+h*w/10,cs])}
+   if(!cand.length){ok=0;break}
+   const m=Math.min(...cand.map(c=>c[0])),good=cand.filter(c=>c[0]<=m+15);add(good[R(good.length)][1])}
   if(!ok)continue;
-  const all=P.flat(),mr=Math.min(...all.map(c=>c[0])),mc=Math.min(...all.map(c=>c[1])),h=Math.max(...all.map(c=>c[0]))-mr+1,w=Math.max(...all.map(c=>c[1]))-mc+1;
-  if(h>7||w>7)continue;
-  P=P.map(p=>p.map(([r,c])=>[r-mr,c-mc]));
+  const h=r1-r0+1,w=c1-c0+1;
+  P=P.map(p=>p.map(([r,c])=>[r-r0,c-c0]));
   const mask=Array(h*w).fill(1);P.flat().forEach(([r,c])=>mask[r*w+c]=0);
   if(solve(h,w,P,2,mask)==1)return{P,h,w,mask}}
  return null}
 function g5(){const{P,h,w,mask}=mkP(),t=0;
  const N=h*w,ids=pick(N),cells=[...Array(N).keys()].filter(i=>!mask[i]),st=shuf(cells).slice(0,3);
- const b=`<div class="bd" style="grid-template-columns:repeat(${w},36px)">`+[...Array(N).keys()].map(i=>mask[i]?'<i></i>':`<b>${st.includes(i)?'①②③'[st.indexOf(i)]:''}</b>`).join('')+'</div>';
- const pcs=shuf(P.map((p,k)=>{const q=tf(p.map(([r,c])=>[r,c,ids[r*w+c]]),R(4),R(2)),H=Math.max(...q.map(c=>c[0]))+1,W=Math.max(...q.map(c=>c[1]))+1;let s=`<div class="pc" style="grid-template-columns:repeat(${W},34px)">`;
-  for(let r=0;r<H;r++)for(let c=0;c<W;c++){const m=q.find(z=>z[0]==r&&z[1]==c);s+=m?`<b style="background:hsl(${k*47%360},65%,86%)">${G(m[2],28)}</b>`:'<i></i>'}return s+'</div>'}));
+ const b=`<div class="bd" style="grid-template-columns:repeat(${w},var(--u))">`+[...Array(N).keys()].map(i=>mask[i]?'<i></i>':`<b>${st.includes(i)?'①②③'[st.indexOf(i)]:''}</b>`).join('')+'</div>';
+ const pcs=shuf(P.map((p,k)=>{const q=tf(p.map(([r,c])=>[r,c,ids[r*w+c]]),0,0),H=Math.max(...q.map(c=>c[0]))+1,W=Math.max(...q.map(c=>c[1]))+1;let s=`<div class="pc" style="grid-template-columns:repeat(${W},var(--u))">`;
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){const m=q.find(z=>z[0]==r&&z[1]==c);s+=m?`<b style="background:hsl(${k*47%360},65%,86%)">${G(m[2],30)}</b>`:'<i></i>'}return s+'</div>'}));
  return{ans:st.map(i=>ids[i]),papers:[b,`<div class="pcs">${pcs.join('')}</div>`],tries:t}}
 // ---- 進行 ----
-// 紙の上部に出すルール説明画像: images/rule-<名前>.png (IMの順に、各謎の紙の上から)
-const IM=[['1a','1b'],['2'],['3'],['4'],['5a','5b'],['6a','6b'],['final']];
+const IM=[['1a','1b'],['2'],['3'],['4'],['5a','5b'],['6a',null],['final']];
+const WU=[10.2,7.2,9.6,9.6,10.2,7.2,8.4];
 const IMG=n=>`images/rule-${n}.png`;
-let D,FA,cur,fin,t0,tEnd,mode=0,first=null;
+let D,FA,POS,FIG,cur,fin,t0,tEnd,mode=0,first=null;
 $('#ti').innerHTML=[5,58,19,77,33].map(i=>G(i,30)).join('');
-function start(){D=[g0(),g1(),g2(),g3(),g4(),g5()];FA=D.map(d=>d.ans[0]);fin=[];cur=0;tEnd=0;t0=performance.now();
- $('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
+function start(){D=[g0(),g1(),g2(),g3(),g4(),g5()];POS=D.map(()=>1+R(3));FA=D.map((d,i)=>d.ans[POS[i]-1]);
+ let f='<div class="fg" style="grid-template-columns:repeat(7,var(--u))"><i></i>'+D.map((_,i)=>`<small>Q${i+1}</small>`).join('');
+ for(let r=0;r<5;r++){f+=r==2?'<em>➡</em>':'<i></i>';D.forEach((_,i)=>{const k=r-2+POS[i]-1;f+=k>=0&&k<3?`<b class="${r==2?'hl':''}"></b>`:'<i></i>'})}
+ FIG=f+'</div><div id="ans"></div>';
+ fin=[];cur=0;tEnd=0;t0=performance.now();$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0);requestAnimationFrame(tick)}
+function fit(){const p=$('#pz');p.style.setProperty('--w',WU[cur]);p.style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/WU[cur])+'px')}
+window.onresize=()=>{if(D)fit()};
 function render(){
- $('#tabs').innerHTML=[1,2,3,4,5,6,'★'].map((n,i)=>`<button data-t="${i}" class="${i==cur?'on':''}">${n}</button>`).join('');
- const P=cur<6?D[cur].papers:['<div id="ans"></div>'];
- $('#pz').innerHTML=P.map((p,i)=>`<div class="paper"><img class="rule" src="${IMG(IM[cur][i])}" data-n="rule-${IM[cur][i]}.png" alt="">${p}</div>`).join('');
+ $('#tabs').innerHTML=[0,1,2,3,4,5,6].map(i=>`<button data-t="${i}" class="${i==cur?'on':''}">${i<6?'Q'+(i+1):'★'}</button>`).join('');
+ fit();const P=cur<6?D[cur].papers:[FIG];
+ $('#pz').innerHTML=P.map((p,i)=>{const im=IM[cur][i];return`<div class="paper"><div class="qn">${cur<6?'Q'+(cur+1):'★'}</div>${im?`<img class="rule" src="${IMG(im)}" data-n="rule-${im}.png" alt="">`:''}${p}</div>`}).join('');
  document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
  $('#kb').hidden=cur!=6;drawAns();drawKb()}
-function drawAns(){const a=$('#ans');if(!a)return;a.style.display='flex';a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}
+function drawAns(){const a=$('#ans');if(!a)return;a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}
 const part=(k,i)=>{const w=k=='L'||k=='R'?[50,100]:[100,50];return`<svg viewBox="0 0 ${w[0]} ${w[1]}" width="${w[0]*.6}" height="${w[1]*.6}" style="color:#222">${PARTS[k][i]}</svg>`};
 function drawKb(){const k=mode?['T','B']:['L','R'];
  $('#kb').innerHTML=`<div><button data-m="0" class="${mode?'':'on'}">◧</button><button data-m="1" class="${mode?'on':''}">⬒</button></div>`+
@@ -89,7 +103,7 @@ function drawKb(){const k=mode?['T','B']:['L','R'];
 function check(){if(fin.length==6&&fin.every((x,i)=>x==FA[i])){tEnd=performance.now();return finish()}
  const a=$('#ans');a.classList.add('ng');setTimeout(()=>{fin=[];a.classList.remove('ng');drawAns()},500)}
 function finish(){const t=fmt(tEnd-t0);$('#tm').textContent=t;$('#game').hidden=true;$('#res').hidden=false;
- $('#res').innerHTML=`<div class="paper" style="text-align:center"><p class="big">${t}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+' でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
+ $('#res').innerHTML=`<div class="paper" style="text-align:center;--w:8"><p class="big">${t}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+' でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
 document.onclick=e=>{
  if(e.target.closest('#env')){const v=$('#env');if(!v.classList.contains('open')){v.classList.add('open');setTimeout(start,800)}return}
  const b=e.target.closest('button');if(!b)return;
