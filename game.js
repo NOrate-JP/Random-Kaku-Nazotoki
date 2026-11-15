@@ -19,23 +19,26 @@ function cnt(S,W){let n=0;const g={};(function f(i,u){if(i==S.length){n++;return
 function g1(){const T=TP[R(3)],tr=R(2);
  const S=T.map(([r,c,d,l])=>[...Array(l).keys()].map(i=>{const a=r+(d=='V'?i:0),b=c+(d=='H'?i:0);return(tr?[b,a]:[a,b])+''}));
  const ks=[...new Set(S.flat())],H=Math.max(...ks.map(k=>+k.split(',')[0]))+1,C=Math.max(...ks.map(k=>+k.split(',')[1]))+1;
- let mp,W,t=0;do{const ids=pick(ks.length);mp={};ks.forEach((k,i)=>mp[k]=ids[i]);W=S.map(s=>s.map(k=>mp[k]))}while(cnt(S,W)!=1&&++t<80);
+ let mp,W,A,ok=0,tries=0;
+ while(!ok){tries++;const ids=pick(7+R(4));mp={};ks.forEach(k=>mp[k]=ids[R(ids.length)]);W=S.map(s=>s.map(k=>mp[k]));
+  const d=W[R(6)].slice();d[R(d.length)]=ids[R(ids.length)];A=W.concat([d]);   // d=1文字だけ違う偽の単語(どこにも入らない)
+  ok=new Set(A.map(w=>w+'')).size==7&&cnt(S,A)==1}
  const st=shuf(ks).slice(0,3);let b=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;
  for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c;b+=mp[k]===undefined?'<i></i>':`<b>${st.includes(k)?'①②③'[st.indexOf(k)]:''}</b>`}
- return{ans:st.map(k=>mp[k]),papers:[`<div class="sk">${b}</div><div class="wl">${shuf(W).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`],hint:'右のことばを、すべて左の盤面に入れよう。①②③のマスの文字を、順に答えよう。'}}
+ return{ans:st.map(k=>mp[k]),tries,papers:[`<div class="sk">${b}</div><div class="wl">${shuf(A).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`]}}
 // ---- 謎3: しりとり(6単語・同頭/同末をあえて重ね、つなぎ方は1通り・紙にバラバラ配置) ----
 const hp=ws=>{let n=0;const f=(l,u)=>{if(n>1)return;if(u==63){n++;return}for(let i=0;i<6;i++)if(!(u>>i&1)&&(l<0||ws[l][2]==ws[i][0]))f(i,u|1<<i)};f(-1,0);return n};
 function g2(){let W,t=0,ok=0;
  do{const ids=pick(14),pool=ids.slice(0,4+R(3)),mid=ids.slice(7),a=[...Array(7)].map(()=>pool[R(pool.length)]);
   W=[0,1,2,3,4,5].map(k=>[a[k],mid[k],a[k+1]]);
   const dup=12-new Set(W.map(w=>w[0])).size-new Set(W.map(w=>w[2])).size;
-  ok=dup>=2&&hp(W)==1}while(!ok&&++t<30000);
+  ok=dup>=2&&hp(W)==1}while(!ok&&++t);
  const cl=shuf([...Array(18).keys()]).slice(0,3).map(i=>[i/3|0,i%3]),pos=[];
  W.forEach(()=>{let p;for(let k=0;k<500;k++){p=[Math.random()*6.2,Math.random()*6.8];if(pos.every(q=>Math.abs(q[0]-p[0])>3.5||Math.abs(q[1]-p[1])>1.5))break}pos.push(p)});
  return{ans:cl.map(([k,m])=>W[k][m]),tries:t,papers:[`<div class="sc" style="height:calc(var(--u)*8)">${W.map((w,i)=>`<span style="left:calc(var(--u)*${pos[i][0]});top:calc(var(--u)*${pos[i][1]});transform:rotate(${R(13)-6}deg)">${row(w)}</span>`).join('')}</div><div class="cl">${cl.map(([k,m])=>`<span>${k+1}-${m+1}</span>`).join('')}</div>`]}}
 // ---- 謎4: ババ抜き(バラバラ配置、消して左から読む) ----
 function g3(){const ids=pick(9),sg=ids.slice(6);let a=[];for(let i=0;i<6;i++)a.push(ids[i],ids[i]);a.push(...sg);a=shuf(a);
- let P;for(let t=0;t<80;t++){P=[];let bad=0;for(const g of a){const s=sg.includes(g);let ok=0;
+ let P;for(;;){P=[];let bad=0;for(const g of a){const s=sg.includes(g);let ok=0;
   for(let k=0;k<400&&!ok;k++){const p=[Math.random()*8.2,Math.random()*6.4,s];if(P.every(q=>Math.hypot(q[0]-p[0],q[1]-p[1])>1.5&&!(q[2]&&s&&Math.abs(q[0]-p[0])<1))){P.push(p);ok=1}}
   if(!ok){bad=1;break}}if(!bad)break}
  const ans=a.map((g,i)=>[g,P[i][0]]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[0]);
@@ -52,7 +55,7 @@ function solve(h,w,P,cap=2,mask){const O=P.map(p=>[norm(p)]),g=mask?mask.slice()
    if(o.every(([a,b])=>{const r=a+dr,c=b+dc;return r>=0&&r<h&&c>=0&&c<w&&!g[r*w+c]})){o.forEach(([a,b])=>g[(a+dr)*w+b+dc]=1);f(u|1<<i);o.forEach(([a,b])=>g[(a+dr)*w+b+dc]=0)}}}})(0);return n}
 const tf=(cs,k,f)=>{let p=cs;for(let i=0;i<k;i++)p=p.map(([a,b,g])=>[b,-a,g]);if(f)p=p.map(([a,b,g])=>[a,-b,g]);const mr=Math.min(...p.map(q=>q[0])),mc=Math.min(...p.map(q=>q[1]));return p.map(([a,b,g])=>[a-mr,b-mc,g])};
 const PEN=['01,02,10,11,21','00,10,20,30,40','00,10,20,30,31','01,11,20,21,30','00,01,10,11,20','00,01,02,11,21','00,02,10,11,12','00,10,20,21,22','00,10,11,21,22','01,10,11,12,21','01,10,11,21,31','00,01,11,21,22'].map(s=>s.split(',').map(x=>[+x[0],+x[1]]));
-function mkP(){for(let T=0;T<2000;T++){const set=new Set();let P=[],ok=1,r0=99,r1=-99,c0=99,c1=-99;
+function mkP(){for(;;){const set=new Set();let P=[],ok=1,r0=99,r1=-99,c0=99,c1=-99;
   const add=cs=>{cs.forEach(([r,c])=>{set.add(r+','+c);r0=Math.min(r0,r);r1=Math.max(r1,r);c0=Math.min(c0,c);c1=Math.max(c1,c)});P.push(cs)};
   for(const t of shuf(PEN).slice(0,6)){const os=orients(t),cand=[];
    if(!P.length){add(os[R(os.length)].map(([a,b])=>[a+4,b+4]));continue}
@@ -79,14 +82,15 @@ function g5(){const{P,h,w,mask}=mkP(),t=0;
 const IM=[['1a','1b'],['2'],['3'],['4'],['5a','5b'],['6a',null],['final']];
 const WU=[10.2,7.2,9.6,9.6,10.2,7.2,8.4];
 const IMG=n=>`images/rule-${n}.png`;
-let D,FA,POS,FIG,cur,fin,t0,tEnd,mode=0,first=null;
+const PENALTY=10;  // 誤答1回あたりの加算秒(0で無効)
+let D,FA,POS,FIG,cur,fin,t0,tEnd,pen=0,miss=0,mode=0,first=null;
 $('#ti').innerHTML=[5,58,19,77,33].map(i=>G(i,30)).join('');
 function start(){D=[g0(),g1(),g2(),g3(),g4(),g5()];POS=D.map(()=>1+R(3));FA=D.map((d,i)=>d.ans[POS[i]-1]);
  let f='<div class="fg" style="grid-template-columns:repeat(7,var(--u))"><i></i>'+D.map((_,i)=>`<small>Q${i+1}</small>`).join('');
  for(let r=0;r<5;r++){f+=r==2?'<em>➡</em>':'<i></i>';D.forEach((_,i)=>{const k=r-2+POS[i]-1;f+=k>=0&&k<3?`<b class="${r==2?'hl':''}"></b>`:'<i></i>'})}
  FIG=f+'</div><div id="ans"></div>';
- fin=[];cur=0;tEnd=0;t0=performance.now();$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
-function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0);requestAnimationFrame(tick)}
+ fin=[];cur=0;tEnd=0;pen=0;miss=0;t0=performance.now();$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
+function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen*1000);requestAnimationFrame(tick)}
 function fit(){const p=$('#pz');p.style.setProperty('--w',WU[cur]);p.style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/WU[cur])+'px')}
 window.onresize=()=>{if(D)fit()};
 function render(){
@@ -98,12 +102,17 @@ function render(){
 function drawAns(){const a=$('#ans');if(!a)return;a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}
 const part=(k,i)=>{const w=k=='L'||k=='R'?[50,100]:[100,50];return`<svg viewBox="0 0 ${w[0]} ${w[1]}" width="${w[0]*.6}" height="${w[1]*.6}" style="color:#222">${PARTS[k][i]}</svg>`};
 function drawKb(){const k=mode?['T','B']:['L','R'];
- $('#kb').innerHTML=`<div><button data-m="0" class="${mode?'':'on'}">◧</button><button data-m="1" class="${mode?'on':''}">⬒</button></div>`+
- [0,1].map(s=>`<div class="pr">${[0,1,2,3,4,5,6].map(i=>`<button data-p="${s}${i}" class="${s==0&&first===i?'on':''}">${part(k[s],i)}</button>`).join('')}</div>`).join('')+'<div><button id="del">⌫</button><button id="ok">✔</button></div>'}
+ const pk=s=>[0,1,2,3,4,5,6].map(i=>`<button data-p="${s}${i}" class="${s==0&&first===i?'on':''}">${part(k[s],i)}</button>`).join('');
+ $('#kb').innerHTML=`<div class="kg">${pk(0)}${pk(1)}<button data-m="0" class="${mode?'':'on'}">◧</button><button data-m="1" class="${mode?'on':''}">⬒</button><i></i><i></i><i></i><button id="del">⌫</button><button id="ok">✔</button></div>`}
 function check(){if(fin.length==6&&fin.every((x,i)=>x==FA[i])){tEnd=performance.now();return finish()}
- const a=$('#ans');a.classList.add('ng');setTimeout(()=>{fin=[];a.classList.remove('ng');drawAns()},500)}
-function finish(){const t=fmt(tEnd-t0);$('#tm').textContent=t;$('#game').hidden=true;$('#res').hidden=false;
- $('#res').innerHTML=`<div class="paper" style="text-align:center;--w:8"><p class="big">${t}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+' でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
+ const a=$('#ans');a.classList.add('ng');miss++;pen+=PENALTY;
+ if(PENALTY){const p=$('#pn');p.textContent='+'+PENALTY;p.classList.remove('f');void p.offsetWidth;p.classList.add('f')}
+ setTimeout(()=>{fin=[];a.classList.remove('ng');drawAns()},500)}
+function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms);let best='';
+ try{const b=+localStorage.getItem('kuuso_best')||0;if(!b||ms<b){localStorage.setItem('kuuso_best',ms);best='NEW!'}else best=fmt(b)}catch(e){}
+ const rk=ms<480000?'S':ms<720000?'A':ms<1080000?'B':'C';   // 8分/12分/18分
+ $('#tm').textContent=t;$('#game').hidden=true;$('#res').hidden=false;
+ $('#res').innerHTML=`<div class="paper" style="text-align:center;--w:8"><div class="stamp">${rk}</div><p class="big">${t}</p><p>✗ ${miss}　🏆 ${best}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+'（ランク'+rk+'）でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
 document.onclick=e=>{
  if(e.target.closest('#env')){const v=$('#env');if(!v.classList.contains('open')){v.classList.add('open');setTimeout(start,800)}return}
  const b=e.target.closest('button');if(!b)return;
