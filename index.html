@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>架空の言語でベタ謎解き！</title>
+<style>
+body{background:#14151c;color:#e8e8f0;font-family:sans-serif;margin:0;padding:12px;max-width:760px;margin:auto}
+#top{display:flex;justify-content:space-between;align-items:center;font-size:18px}#tm{font-family:monospace;font-size:22px}
+button{background:#2a2c3a;color:#e8e8f0;border:1px solid #556;border-radius:6px;padding:6px 10px;margin:2px;cursor:pointer}
+button.on{background:#4a5bd0}button.ok{border-color:#4c4}button:disabled{opacity:.3}
+.g{color:#e8e8f0;background:#ffffff10;border-radius:4px}
+#hint{margin:8px 0;color:#9ad}#pz{margin:8px 0;overflow-x:auto}
+.t{border-collapse:collapse}.t td,.t th{border:1px solid #556;padding:2px;text-align:center}
+.bd{display:grid;grid-template-columns:repeat(6,36px);gap:2px}
+.bd b{width:36px;height:36px;border:2px solid #aab;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:400;box-sizing:border-box}
+.sk{display:flex;gap:16px;flex-wrap:wrap}.row{display:inline-flex;gap:3px;margin:2px 0}
+.bc{cursor:pointer;display:inline-block;margin:3px}.off{opacity:.15}.ex{margin-top:12px}
+#ans{display:flex;gap:6px;min-height:46px;margin:8px 0}.em{width:40px;height:40px;border:2px dashed #667;border-radius:4px}
+.ng{animation:sh .3s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.pr{margin:4px 0}.pr button{padding:2px 6px}.big{font-size:40px;font-family:monospace}
+a{color:#fff;background:#1d9bf0;padding:8px 14px;border-radius:20px;text-decoration:none}
+</style></head><body>
+<div id="top"><b>架空の言語でベタ謎解き！</b><span id="tm">00:00.0</span></div>
+<div id="start"><p>5つのベタ謎解きを、見たことのない文字だけで解こう。<br>スタートするとタイム計測開始。5つ解いたら最終解答へ！</p><button id="go">スタート</button></div>
+<div id="game" hidden><div id="tabs"></div><div id="hint"></div><div id="pz"></div><div id="ans"></div><div id="kb"></div></div>
+<div id="res" hidden></div>
+<script src="parts.js"></script><script src="game.js"></script></body></html>
