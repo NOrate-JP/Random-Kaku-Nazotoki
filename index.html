@@ -1,24 +1,38 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>架空の言語でベタ謎解き！</title>
 <style>
-body{background:#14151c;color:#e8e8f0;font-family:sans-serif;margin:0;padding:12px;max-width:760px;margin:auto}
-#top{display:flex;justify-content:space-between;align-items:center;font-size:18px}#tm{font-family:monospace;font-size:22px}
-button{background:#2a2c3a;color:#e8e8f0;border:1px solid #556;border-radius:6px;padding:6px 10px;margin:2px;cursor:pointer}
-button.on{background:#4a5bd0}button.ok{border-color:#4c4}button:disabled{opacity:.3}
-.g{color:#e8e8f0;background:#ffffff10;border-radius:4px}
-#hint{margin:8px 0;color:#9ad}#pz{margin:8px 0;overflow-x:auto}
-.t{border-collapse:collapse}.t td,.t th{border:1px solid #556;padding:2px;text-align:center}
-.bd{display:grid;grid-template-columns:repeat(6,36px);gap:2px}
-.bd b{width:36px;height:36px;border:2px solid #aab;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:400;box-sizing:border-box}
-.sk{display:flex;gap:16px;flex-wrap:wrap}.row{display:inline-flex;gap:3px;margin:2px 0}
-.bc{cursor:pointer;display:inline-block;margin:3px}.off{opacity:.15}.ex{margin-top:12px}
-#ans{display:flex;gap:6px;min-height:46px;margin:8px 0}.em{width:40px;height:40px;border:2px dashed #667;border-radius:4px}
+body{margin:0;padding:12px;min-height:100vh;box-sizing:border-box;color:#eee;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+background:radial-gradient(ellipse at 50% 30%,#0000 40%,#0006),repeating-linear-gradient(90deg,#0000000f 0 2px,#0000 2px 11px),#7b5a3b}
+.wrap{max-width:760px;margin:auto}
+#top{display:flex;justify-content:space-between;align-items:center;background:#2a2622;border-radius:10px;padding:6px 14px;box-shadow:0 3px 8px #0008}
+#tm{font-family:monospace;font-size:24px;color:#ffd666}
+button{font:inherit;background:#f3ead6;color:#222;border:1px solid #b9a98a;border-radius:6px;padding:6px 10px;margin:2px;cursor:pointer;box-shadow:0 2px 0 #b9a98a}
+button.on{background:#ffe48a}button.ok{border-color:#3a3;color:#262}button:disabled{opacity:.4}
+.paper{background:#fffdf5;color:#222;padding:14px;margin:14px auto;box-shadow:0 4px 12px #0009;width:fit-content;max-width:100%;overflow-x:auto;box-sizing:border-box;
+background-image:repeating-linear-gradient(0deg,#0000 0 27px,#0000000a 27px 28px)}
+.paper:nth-child(odd){transform:rotate(-.5deg)}.paper:nth-child(even){transform:rotate(.4deg)}
+.g{color:#222}.card{background:#fff3b8;color:#222;padding:10px 14px;margin:10px 0;box-shadow:0 3px 8px #0007;transform:rotate(.3deg);line-height:1.6}
+.t{border-collapse:collapse}.t td,.t th{border:1.5px solid #333;padding:2px;text-align:center;width:36px;height:36px}
+.mk{font-size:20px;color:#c22;font-weight:400}
+.bd{display:grid;gap:2px}.bd b,.bd i{width:36px;height:36px;box-sizing:border-box}
+.bd b{border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:400;color:#c22}
+.sk{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}.wl>div{margin:5px 0}.row{display:inline-flex;gap:3px}
+.sc{position:relative;width:420px;height:320px}.sc span{position:absolute}
+.ex{margin-top:14px}.lb{font-size:13px;color:#777}
+#ans{display:flex;gap:6px;min-height:46px;margin-top:4px}.em{width:40px;height:40px;border:2px dashed #999;border-radius:4px;box-sizing:border-box}
 .ng{animation:sh .3s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-.pr{margin:4px 0}.pr button{padding:2px 6px}.big{font-size:40px;font-family:monospace}
-a{color:#fff;background:#1d9bf0;padding:8px 14px;border-radius:20px;text-decoration:none}
-</style></head><body>
-<div id="top"><b>架空の言語でベタ謎解き！</b><span id="tm">00:00.0</span></div>
-<div id="start"><p>5つのベタ謎解きを、見たことのない文字だけで解こう。<br>スタートするとタイム計測開始。5つ解いたら最終解答へ！</p><button id="go">スタート</button></div>
-<div id="game" hidden><div id="tabs"></div><div id="hint"></div><div id="pz"></div><div id="ans"></div><div id="kb"></div></div>
-<div id="res" hidden></div>
+#kb{background:#2a2622;border-radius:10px;padding:8px;margin:12px 0}#kb small{color:#bbb}.pr{margin:4px 0}.pr button{padding:2px 6px}
+.big{font-size:44px;font-family:monospace;margin:4px}
+a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-decoration:none}
+.env{position:relative;width:300px;height:200px;margin:70px auto;cursor:pointer;filter:drop-shadow(0 8px 10px #000a)}
+.env .bodyx{position:absolute;inset:0;background:#dcc59c;border-radius:4px}
+.env .flap{position:absolute;left:0;top:0;border-left:150px solid transparent;border-right:150px solid transparent;border-top:115px solid #c9ad80;transform-origin:top;transition:transform .6s;z-index:2}
+.env.open .flap{transform:rotateX(180deg);z-index:0}
+.env .lab{position:absolute;top:100px;width:100%;text-align:center;color:#4a3a22;z-index:1}.env small{display:block;margin-top:6px;opacity:.7}
+</style></head><body><div class="wrap">
+<div id="top"><b>謎解きキット</b><span id="tm">00:00.0</span></div>
+<div id="start"><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b>架空の言語で<br>ベタ謎解き！</b><small>タップして開封（開けると計測開始）</small></div></div></div>
+<div id="game" hidden><div id="tabs"></div><div id="hint" class="card"></div><div id="pz"></div>
+<div class="paper"><div class="lb">解答欄</div><div id="ans"></div></div><div id="kb"></div></div>
+<div id="res" hidden></div></div>
 <script src="parts.js"></script><script src="game.js"></script></body></html>
