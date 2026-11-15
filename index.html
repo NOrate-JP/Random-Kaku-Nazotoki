@@ -29,10 +29,13 @@ a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-deco
 .env .flap{position:absolute;left:0;top:0;border-left:150px solid transparent;border-right:150px solid transparent;border-top:115px solid #c9ad80;transform-origin:top;transition:transform .6s;z-index:2}
 .env.open .flap{transform:rotateX(180deg);z-index:0}
 .env .lab{position:absolute;top:100px;width:100%;text-align:center;color:#4a3a22;z-index:1}.env small{display:block;margin-top:6px;opacity:.7}
+.paper{min-width:300px}.rule{display:block;width:0;min-width:100%;height:auto;margin:0 0 10px}
+.ph{border:2px dashed #aaa;color:#999;font:12px monospace;padding:22px 8px;text-align:center;margin-bottom:10px}
+.sl{display:flex;flex-direction:column;align-items:center}.sl small{color:#999;font:11px sans-serif}#ans{gap:8px}
 </style></head><body><div class="wrap">
-<div id="top"><b>謎解きキット</b><span id="tm">00:00.0</span></div>
-<div id="start"><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b>架空の言語で<br>ベタ謎解き！</b><small>タップして開封（開けると計測開始）</small></div></div></div>
-<div id="game" hidden><div id="tabs"></div><div id="hint" class="card"></div><div id="pz"></div>
-<div class="paper"><div class="lb">解答欄</div><div id="ans"></div></div><div id="kb"></div></div>
+<div id="top"><b>✉</b><span id="tm">00:00.0</span></div>
+<div id="start"><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b id="ti"></b><small>▶</small></div></div></div>
+<div id="game" hidden><div id="tabs"></div><div id="pz"></div>
+<div id="kb"></div></div>
 <div id="res" hidden></div></div>
 <script src="parts.js"></script><script src="game.js"></script></body></html>

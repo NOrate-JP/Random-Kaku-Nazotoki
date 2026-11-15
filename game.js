@@ -38,36 +38,37 @@ function g3(){const ids=pick(9),sg=ids.slice(6);let a=[];for(let i=0;i<6;i++)a.p
 function g4(){const m=pick(10),x=R(377)+123,y=R(400)+100,n=v=>String(v).split('').map(d=>m[+d]);
  return{ans:n(x+y),papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(i=>`<td>${G(i,30)}</td>`).join('')+'</tr></table>',`<div class="ex">${row(n(x))} ＋ ${row(n(y))} ＝ ？</div>`],hint:'対応表で数字にして計算しよう。答えを文字に直して答えよう。'}}
 // ---- 進行 ----
-let D,cur,inp,done,t0,tEnd,mode=0,first=null;
-function start(){D=[g0(),g1(),g2(),g3(),g4()];
- D.push({ans:D.map(d=>d.ans[0]),papers:['<p>5つの謎の答えの<b>1文字目</b>を、謎1〜5の順に並べよう。</p>'],hint:'いよいよ最終問題！'});
- inp=D.map(()=>[]);done=D.map(()=>false);cur=0;tEnd=0;t0=performance.now();
+// 紙の上部に出すルール説明画像: images/rule-<名前>.png (IMの順に、各謎の紙の上から)
+const IM=[['1a','1b'],['2'],['3'],['4'],['5a','5b'],['final']];
+const IMG=n=>`images/rule-${n}.png`;
+let D,FA,cur,fin,t0,tEnd,mode=0,first=null;
+$('#ti').innerHTML=[5,58,19,77,33].map(i=>G(i,30)).join('');
+function start(){D=[g0(),g1(),g2(),g3(),g4()];FA=D.map(d=>d.ans[0]);fin=[];cur=0;tEnd=0;t0=performance.now();
  $('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0);requestAnimationFrame(tick)}
 function render(){
- $('#tabs').innerHTML=NAMES.map((n,i)=>`<button data-t="${i}" class="${i==cur?'on':''} ${done[i]?'ok':''}" ${i==5&&!done.slice(0,5).every(Boolean)?'disabled':''}>${done[i]?'✓ ':''}${i<5?i+1:'最終'}</button>`).join('');
- $('#hint').innerHTML=`<b>${NAMES[cur]}</b>　${D[cur].hint}`;
- $('#pz').innerHTML=D[cur].papers.map(p=>`<div class="paper">${p}</div>`).join('');drawAns();drawKb()}
-function drawAns(){const L=D[cur].ans.length;$('#ans').innerHTML=[...Array(L).keys()].map(i=>inp[cur][i]!==undefined?G(inp[cur][i],40):'<span class="em"></span>').join('')}
+ $('#tabs').innerHTML=[1,2,3,4,5,'★'].map((n,i)=>`<button data-t="${i}" class="${i==cur?'on':''}">${n}</button>`).join('');
+ const P=cur<5?D[cur].papers:['<div id="ans"></div>'];
+ $('#pz').innerHTML=P.map((p,i)=>`<div class="paper"><img class="rule" src="${IMG(IM[cur][i])}" data-n="rule-${IM[cur][i]}.png" alt="">${p}</div>`).join('');
+ document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
+ $('#kb').hidden=cur!=5;drawAns();drawKb()}
+function drawAns(){const a=$('#ans');if(!a)return;a.style.display='flex';a.innerHTML=[0,1,2,3,4].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}
 const part=(k,i)=>{const w=k=='L'||k=='R'?[50,100]:[100,50];return`<svg viewBox="0 0 ${w[0]} ${w[1]}" width="${w[0]*.6}" height="${w[1]*.6}" style="color:#222">${PARTS[k][i]}</svg>`};
 function drawKb(){const k=mode?['T','B']:['L','R'];
- $('#kb').innerHTML=`<div><button data-m="0" class="${mode?'':'on'}">左右型</button><button data-m="1" class="${mode?'on':''}">上下型</button> <small>${mode?'上→下':'左→右'}の順にタップ</small></div>`+
- [0,1].map(s=>`<div class="pr">${[0,1,2,3,4,5,6].map(i=>`<button data-p="${s}${i}" class="${s==0&&first===i?'on':''}">${part(k[s],i)}</button>`).join('')}</div>`).join('')+'<div><button id="del">1文字消す</button><button id="ok">回答</button></div>'}
-function check(){if(done[cur])return;const a=D[cur].ans,v=inp[cur];
- if(v.length==a.length&&v.every((x,i)=>x==a[i])){done[cur]=true;inp[cur]=[...a];
-  if(cur==5){tEnd=performance.now();return finish()}
-  const nx=done.slice(0,5).findIndex(x=>!x);cur=nx<0?5:nx;first=null;render()}
- else{$('#ans').classList.add('ng');setTimeout(()=>{$('#ans').classList.remove('ng');inp[cur]=[];drawAns()},500)}}
+ $('#kb').innerHTML=`<div><button data-m="0" class="${mode?'':'on'}">◧</button><button data-m="1" class="${mode?'on':''}">⬒</button></div>`+
+ [0,1].map(s=>`<div class="pr">${[0,1,2,3,4,5,6].map(i=>`<button data-p="${s}${i}" class="${s==0&&first===i?'on':''}">${part(k[s],i)}</button>`).join('')}</div>`).join('')+'<div><button id="del">⌫</button><button id="ok">✔</button></div>'}
+function check(){if(fin.length==5&&fin.every((x,i)=>x==FA[i])){tEnd=performance.now();return finish()}
+ const a=$('#ans');a.classList.add('ng');setTimeout(()=>{fin=[];a.classList.remove('ng');drawAns()},500)}
 function finish(){const t=fmt(tEnd-t0);$('#tm').textContent=t;$('#game').hidden=true;$('#res').hidden=false;
- $('#res').innerHTML=`<div class="paper" style="text-align:center"><h2>謎解きクリア！</h2><p class="big">${t}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+' でクリアしました！\n#架空言語ベタ謎解き')}">結果をポストする</a><p><button id="go">もう一度</button></p></div>`}
+ $('#res').innerHTML=`<div class="paper" style="text-align:center"><p class="big">${t}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！を '+t+' でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
 document.onclick=e=>{
  if(e.target.closest('#env')){const v=$('#env');if(!v.classList.contains('open')){v.classList.add('open');setTimeout(start,800)}return}
  const b=e.target.closest('button');if(!b)return;
  if(b.id=='go'){$('#env').classList.remove('open');$('#res').hidden=true;$('#start').hidden=false;$('#tm').textContent='00:00.0';return}
  if(b.dataset.t!==undefined){cur=+b.dataset.t;first=null;return render()}
  if(b.dataset.m!==undefined){mode=+b.dataset.m;first=null;return drawKb()}
- if(b.dataset.p){if(done[cur])return;const s=+b.dataset.p[0],i=+b.dataset.p[1];
+ if(b.dataset.p){const s=+b.dataset.p[0],i=+b.dataset.p[1];
   if(!s){first=i;return drawKb()}if(first===null)return;
-  if(inp[cur].length<D[cur].ans.length)inp[cur].push(mode*49+first*7+i);first=null;drawAns();return drawKb()}
- if(b.id=='del'){inp[cur].pop();return drawAns()}
+  if(fin.length<5)fin.push(mode*49+first*7+i);first=null;drawAns();return drawKb()}
+ if(b.id=='del'){fin.pop();return drawAns()}
  if(b.id=='ok')check()};
