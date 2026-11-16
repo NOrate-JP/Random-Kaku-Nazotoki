@@ -1,13 +1,13 @@
 const $=s=>document.querySelector(s),R=n=>Math.random()*n|0;
 const shuf=a=>{a=[...a];for(let i=a.length;i>1;){const j=R(i--);[a[i],a[j]]=[a[j],a[i]]}return a};
-const pick=n=>shuf([...Array(98).keys()]).slice(0,n);
+let POOL=[...Array(50).keys()];   // 表に採用された50文字(start時に決まる)。全問題・答えはここからだけ出す
+const pick=n=>shuf(POOL).slice(0,n);
 const G=(i,s=36)=>`<span class="gw" style="--k:${s/36}">${glyph(i,s)}</span>`,row=a=>`<span class="row">${a.map(i=>G(i,34)).join('')}</span>`;
 const NAMES=['謎1 五十音表','謎2 スケルトン','謎3 しりとり','謎4 ババ抜き','謎5 覆面算','最終解答'];
 const fmt=ms=>{const s=ms/1000;return String(s/60|0).padStart(2,'0')+':'+(s%60).toFixed(1).padStart(4,'0')};
-// ---- 謎1: 五十音表(横長10列×5行)。紙A=表、紙B=①②③の位置 ----
-function g0(){const ids=pick(50),cl=shuf([...Array(50).keys()]).slice(0,3);
- const tb=f=>'<table class="t">'+[0,1,2,3,4].map(r=>'<tr>'+[...Array(10).keys()].map(c=>`<td>${f(r*10+c)}</td>`).join('')+'</tr>').join('')+'</table>';
- return{ans:cl.map(i=>ids[i]),papers:[tb(i=>G(ids[i],32)),tb(i=>cl.includes(i)?`<b class="mk">${'①②③'[cl.indexOf(i)]}</b>`:'')]}}
+// ---- 謎1: 空の表に①②③(表の内容は「表」タブ) ----
+function g0(){const cl=shuf(OPEN).slice(0,3);
+ return{ans:cl.map(k=>TBL[k]),papers:[tbl(k=>cl.includes(k)?`<b class="mk">${'①②③'[cl.indexOf(k)]}</b>`:'')]}}
 // ---- 謎2: スケルトン(6単語・盤面3種×転置・解は1通り) ----
 const TP=[[[0,0,'H',5],[0,0,'V',4],[0,4,'V',5],[3,0,'H',3],[3,2,'V',4],[6,2,'H',5]],
 [[0,0,'V',5],[0,0,'H',4],[0,3,'V',6],[2,0,'H',4],[4,0,'H',4],[5,3,'H',4]],
@@ -78,31 +78,35 @@ function g5(){const{P,h,w,mask}=mkP(),t=0;
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){const m=q.find(z=>z[0]==r&&z[1]==c);s+=m?`<b style="background:hsl(${k*47%360},65%,86%)">${G(m[2],30)}</b>`:'<i></i>'}return s+'</div>'}));
  return{ans:st.map(i=>ids[i]),papers:[b,`<div class="pcs">${pcs.join('')}</div>`],tries:t}}
 // ---- 進行 ----
-const IM=[[null,null],['2'],['3'],['4'],[null,null],['6a',null],[null]];   // ルール説明画像: nullは画像なし
-const WU=[10.2,7.2,9.6,9.6,10.2,7.2,8.4];
+const IM=[[null],['2'],['3'],['4'],[null,null],['6a',null],[null]];   // Q1..Q6,★ のルール説明画像(images/rule-○.png)。nullは画像なし
+const WU=[11.2,11.2,7.2,9.6,9.6,10.2,7.2,8.4];   // 表,Q1..Q6,★ の紙に必要な幅(マス数)
 const IMG=n=>`images/rule-${n}.png`;
 const PENALTY=10;  // 誤答1回あたりの加算秒(0で無効)
-let D,FA,POS,FIG,cur,fin,t0,tEnd,pen=0,miss=0,mode=0,first=null;
-$('#ti').innerHTML=[5,58,19,77,33].map(i=>G(i,30)).join('');
-function start(){D=[g0(),g1(),g2(),g3(),g4(),g5()];POS=D.map(()=>1+R(3));FA=D.map((d,i)=>d.ans[POS[i]-1]);
+const MASK=[[0,0,0],[1,0,1],[1,0,0],[1,0,1],[0,0,0]],TR=5,TC=11;   // 表は縦5×横11。左3列の黒マス(1=黒)
+let D,FA,POS,FIG,TBL,OPEN,cur,fin,t0,tEnd,pen=0,miss=0;
+function mkTable(){OPEN=[];for(let r=0;r<TR;r++)for(let c=0;c<TC;c++)if(!(c<3&&MASK[r][c]))OPEN.push(r*TC+c);
+ POOL=shuf([...Array(200).keys()]).slice(0,OPEN.length);TBL=Array(TR*TC).fill(-1);OPEN.forEach((k,i)=>TBL[k]=POOL[i])}
+const tbl=f=>'<table class="t">'+[...Array(TR).keys()].map(r=>'<tr>'+[...Array(TC).keys()].map(c=>{const k=r*TC+c;return TBL[k]<0?'<td class="bk"></td>':`<td>${f(k)}</td>`}).join('')+'</tr>').join('')+'</table>';
+PARTS_READY.then(()=>{$('#ti').innerHTML=[5,58,19,177,33].map(i=>G(i,30)).join('')});
+async function start(){await PARTS_READY;mkTable();D=[g0(),g1(),g2(),g3(),g4(),g5()];POS=D.map(()=>1+R(3));FA=D.map((d,i)=>d.ans[POS[i]-1]);
  let f='<div class="fg" style="grid-template-columns:repeat(7,var(--u))"><i></i>'+D.map((_,i)=>`<small>Q${i+1}</small>`).join('');
  for(let r=0;r<5;r++){f+=r==2?'<em>➡</em>':'<i></i>';D.forEach((_,i)=>{const k=r-2+POS[i]-1;f+=k>=0&&k<3?`<b class="${r==2?'hl':''}"></b>`:'<i></i>'})}
  FIG=f+'</div><div id="ans"></div>';
  fin=[];cur=0;tEnd=0;pen=0;miss=0;t0=performance.now();$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen*1000);requestAnimationFrame(tick)}
-function fit(){const p=$('#pz');p.style.setProperty('--w',WU[cur]);p.style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/WU[cur])+'px')}
+function fit(){const p=$('#pz');p.style.setProperty('--w',WU[cur+1]);p.style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/WU[cur+1])+'px')}
 window.onresize=()=>{if(D)fit()};
 function render(){
- $('#tabs').innerHTML=[0,1,2,3,4,5,6].map(i=>`<button data-t="${i}" class="${i==cur?'on':''}">${i<6?'Q'+(i+1):'★'}</button>`).join('');
- fit();const P=cur<6?D[cur].papers:[FIG];
- $('#pz').innerHTML=P.map((p,i)=>{const im=IM[cur][i];return`<div class="paper"><div class="qn">${cur<6?'Q'+(cur+1):'★'}</div>${im?`<img class="rule" src="${IMG(im)}" data-n="rule-${im}.png" alt="">`:''}${p}</div>`}).join('');
+ $('#tabs').innerHTML=[-1,0,1,2,3,4,5,6].map(i=>`<button data-t="${i}" class="${i==cur?'on':''}">${i<0?'表':i<6?'Q'+(i+1):'★'}</button>`).join('');
+ fit();const P=cur<0?[tbl(k=>G(TBL[k],32))]:cur<6?D[cur].papers:[FIG];
+ $('#pz').innerHTML=P.map((p,i)=>{const im=(IM[cur]||[])[i];return`<div class="paper"><div class="qn">${cur<0?'表':cur<6?'Q'+(cur+1):'★'}</div>${im?`<img class="rule" src="${IMG(im)}" data-n="rule-${im}.png" alt="">`:''}${p}</div>`}).join('');
  document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
- $('#kb').hidden=cur!=6;drawAns();drawKb()}
+ $('#kb').hidden=cur!=6;drawAns();if(cur==6)drawKb()}
 function drawAns(){const a=$('#ans');if(!a)return;a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}
-const part=(k,i)=>{const w=k=='L'||k=='R'?[50,100]:[100,50];return`<svg viewBox="0 0 ${w[0]} ${w[1]}" width="${w[0]*.6}" height="${w[1]*.6}" style="color:#222">${PARTS[k][i]}</svg>`};
-function drawKb(){const k=mode?['T','B']:['L','R'];
- const pk=s=>[0,1,2,3,4,5,6].map(i=>`<button data-p="${s}${i}" class="${s==0&&first===i?'on':''}">${part(k[s],i)}</button>`).join('');
- $('#kb').innerHTML=`<div class="kg">${pk(0)}${pk(1)}<button data-m="0" class="${mode?'':'on'}">◧</button><button data-m="1" class="${mode?'on':''}">⬒</button><i></i><i></i><i></i><button id="del">⌫</button><button id="ok">✔</button></div>`}
+// キーボード: 表と同じ配置(縦5×横11、黒マスは空き)。1キー=1文字。横スクロール、正方形キー
+function drawKb(){let h='<div class="ks"><div class="kg2">';
+ for(let k=0;k<TR*TC;k++)h+=TBL[k]<0?'<i></i>':`<button data-g="${TBL[k]}">${G(TBL[k],36)}</button>`;
+ $('#kb').innerHTML=h+'</div></div><div class="kc"><button id="del">⌫</button><button id="ok">✔</button></div>'}
 function check(){if(fin.length==6&&fin.every((x,i)=>x==FA[i])){tEnd=performance.now();return finish()}
  const a=$('#ans');a.classList.add('ng');miss++;pen+=PENALTY;
  if(PENALTY){const p=$('#pn');p.textContent='+'+PENALTY;p.classList.remove('f');void p.offsetWidth;p.classList.add('f')}
@@ -116,10 +120,7 @@ document.onclick=e=>{
  if(e.target.closest('#env')){const v=$('#env');if(!v.classList.contains('open')){v.classList.add('open');setTimeout(start,800)}return}
  const b=e.target.closest('button');if(!b)return;
  if(b.id=='go'){$('#env').classList.remove('open');$('#res').hidden=true;$('#start').hidden=false;$('#tm').textContent='00:00.0';return}
- if(b.dataset.t!==undefined){cur=+b.dataset.t;first=null;return render()}
- if(b.dataset.m!==undefined){mode=+b.dataset.m;first=null;return drawKb()}
- if(b.dataset.p){const s=+b.dataset.p[0],i=+b.dataset.p[1];
-  if(!s){first=i;return drawKb()}if(first===null)return;
-  if(fin.length<6)fin.push(mode*49+first*7+i);first=null;drawAns();return drawKb()}
+ if(b.dataset.t!==undefined){cur=+b.dataset.t;return render()}
+ if(b.dataset.g!==undefined){if(fin.length<6)fin.push(+b.dataset.g);return drawAns()}
  if(b.id=='del'){fin.pop();return drawAns()}
  if(b.id=='ok')check()};
