@@ -21,8 +21,7 @@ function g1(){const T=TP[R(3)],tr=R(2);
  const ks=[...new Set(S.flat())],H=Math.max(...ks.map(k=>+k.split(',')[0]))+1,C=Math.max(...ks.map(k=>+k.split(',')[1]))+1;
  let mp,W,A,ok=0,tries=0;
  while(!ok){tries++;const ids=pick(7+R(4));mp={};ks.forEach(k=>mp[k]=ids[R(ids.length)]);W=S.map(s=>s.map(k=>mp[k]));
-  const d=W[R(6)].slice();d[R(d.length)]=ids[R(ids.length)];A=W.concat([d]);   // d=1文字だけ違う偽の単語(どこにも入らない)
-  ok=new Set(A.map(w=>w+'')).size==7&&cnt(S,A)==1}
+  A=W;ok=new Set(A.map(w=>w+'')).size==6&&cnt(S,A)==1}   // 余りのカギなし。文字の使い回しでひっかけ、解は必ず1通り
  const st=shuf(ks).slice(0,3);let b=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;
  for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c;b+=mp[k]===undefined?'<i></i>':`<b>${st.includes(k)?'①②③'[st.indexOf(k)]:''}</b>`}
  return{ans:st.map(k=>mp[k]),tries,papers:[`<div class="sk">${b}</div><div class="wl">${shuf(A).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`]}}
@@ -79,7 +78,7 @@ function g5(){const{P,h,w,mask}=mkP(),t=0;
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){const m=q.find(z=>z[0]==r&&z[1]==c);s+=m?`<b style="background:hsl(${k*47%360},65%,86%)">${G(m[2],30)}</b>`:'<i></i>'}return s+'</div>'}));
  return{ans:st.map(i=>ids[i]),papers:[b,`<div class="pcs">${pcs.join('')}</div>`],tries:t}}
 // ---- 進行 ----
-const IM=[['1a','1b'],['2'],['3'],['4'],['5a','5b'],['6a',null],['final']];
+const IM=[[null,null],['2'],['3'],['4'],[null,null],['6a',null],[null]];   // ルール説明画像: nullは画像なし
 const WU=[10.2,7.2,9.6,9.6,10.2,7.2,8.4];
 const IMG=n=>`images/rule-${n}.png`;
 const PENALTY=10;  // 誤答1回あたりの加算秒(0で無効)
