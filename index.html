@@ -5,12 +5,12 @@
 :root{--u:36px;--w:10}
 body{margin:0;padding:10px;min-height:100vh;box-sizing:border-box;color:#3a2a18;font-family:"Noto Sans JP",sans-serif;
 background:radial-gradient(ellipse at 50% 25%,#fff4 0,#0000 60%,#0000001a),repeating-linear-gradient(90deg,#0000000a 0 2px,#0000 2px 13px),#d6b283}
-.wrap{max-width:760px;margin:auto}
+.wrap{max-width:1160px;margin:auto}
 #top{display:flex;justify-content:space-between;align-items:center;background:#2a2622;border-radius:10px;padding:6px 14px;box-shadow:0 3px 8px #0008}
 #tm{font-family:monospace;font-size:24px;color:#2a2018}
 button{font:inherit;background:#f3ead6;color:#222;border:1px solid #b9a98a;border-radius:6px;padding:6px 10px;margin:2px;cursor:pointer;box-shadow:0 2px 0 #b9a98a}
 button.on{background:#ffe48a}button:disabled{opacity:.4}
-.paper{background:#fffdf5;color:#222;padding:0 12px 12px;margin:14px auto;box-shadow:0 4px 12px #0009;width:calc(var(--u)*var(--w) + 24px);max-width:100%;box-sizing:border-box;overflow:hidden;
+.paper{background:#fffdf5;color:#222;padding:0 12px 12px;margin:14px 0;box-shadow:0 4px 12px #0009;width:calc(var(--u)*var(--pw) + 24px);max-width:100%;box-sizing:border-box;overflow:hidden;
 background-image:repeating-linear-gradient(0deg,#0000 0 27px,#0000000a 27px 28px)}
 .paper:nth-child(odd){transform:rotate(-.4deg)}.paper:nth-child(even){transform:rotate(.3deg)}
 .qn{display:inline-block;background:#000;color:#fff;font-weight:700;font-size:15px;padding:3px 10px;margin:0 0 10px -12px}
@@ -62,9 +62,21 @@ background:linear-gradient(90deg,#d4e0e8 0 6%,#c96 6% 12%,#e8b923 12% 82%,#e9c9a
 #tabs{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-width:480px;margin:12px 0 0}
 #tabs button{aspect-ratio:1;margin:0;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700;font-size:clamp(10px,3vw,15px);background:#f3ead6}
 #tabs button.on{background:#ffe48a;border-color:#8a6d2f}
+#pz{display:flex;flex-wrap:wrap;gap:0 22px;align-items:flex-start}#pz.stack{flex-direction:column}
+.paper.noclip::before{display:none}
+.dif{display:flex;gap:8px;justify-content:center;margin-top:26px}.dif button{padding:10px 16px;font-weight:700;min-width:92px}
+.cuts{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}.cutwrap{margin:14px 0}.cutwrap .qn{margin:0 0 8px}
+.cut{filter:drop-shadow(0 3px 5px #000a);transform:rotate(var(--rot))}.ci{background:#fffdf5 repeating-linear-gradient(0deg,#0000 0 27px,#0000000a 27px 28px);color:#222}
+.chain .cr{display:flex;align-items:center;margin:8px 0}.cw{display:inline-flex;gap:2px}
+.cw b{width:var(--u);height:var(--u);box-sizing:border-box;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*.5);font-weight:400;color:#c22}
+.ar{font-size:calc(var(--u)*.5);margin:0 calc(var(--u)*.12)}
+.sc>span,.sc>div{position:absolute}
+.cd{width:calc(var(--u)*1.2);height:calc(var(--u)*2.2);border:1.5px solid #333;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-around;box-sizing:border-box;font-weight:700;font-size:calc(var(--u)*.55);line-height:1}
+.sl{cursor:pointer}.sl.sel .em{border-color:#d2691e;border-style:solid}.sl.auto .gw{background:#dff2d8;border-radius:4px}
+#tabs button{position:relative}#tabs button.ok{border-color:#3a8a3a}#tabs button.ok::after{content:"✓";position:absolute;top:1px;right:4px;color:#2a7a2a;font-size:12px}
 </style></head><body><div class="wrap">
-<div id="top"><b>✉</b><span><b id="pn"></b><span id="tm">00:00.0</span></span></div>
-<div id="start"><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b id="ti"></b><small>▶</small></div></div></div>
+<div id="top"><b id="dn">✉</b><span><b id="pn"></b><span id="tm">00:00.0</span></span></div>
+<div id="start"><div class="dif" id="dif"></div><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b id="ti"></b><small>▶</small></div></div></div>
 <div id="game" hidden><div id="tabs"></div><div id="pz"></div><div id="kb"></div></div>
 <div id="res" hidden></div></div>
-<script src="parts.js?v=10"></script><script src="game.js?v=10"></script></body></html>
+<script src="parts.js?v=11"></script><script src="game.js?v=11"></script></body></html>
