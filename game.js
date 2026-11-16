@@ -8,23 +8,36 @@ const fmt=ms=>{const s=ms/1000;return String(s/60|0).padStart(2,'0')+':'+(s%60).
 // ---- 謎1: 空の表に①②③(表の内容は「表」タブ) ----
 function g0(){const cl=shuf(OPEN).slice(0,3);
  return{ans:cl.map(k=>TBL[k]),papers:[tbl(k=>cl.includes(k)?`<b class="mk">${'①②③'[cl.indexOf(k)]}</b>`:'')]}}
-// ---- 謎2: スケルトン(6単語・盤面3種×転置・解は1通り) ----
-const TP=[[[0,0,'H',5],[0,0,'V',4],[0,4,'V',5],[3,0,'H',3],[3,2,'V',4],[6,2,'H',5]],
-[[0,0,'V',5],[0,0,'H',4],[0,3,'V',6],[2,0,'H',4],[4,0,'H',4],[5,3,'H',4]],
-[[0,1,'H',5],[0,1,'V',4],[0,5,'V',6],[3,1,'H',3],[3,3,'V',4],[5,3,'H',3]]];
+// ---- 謎2: スケルトン(盤面は毎回ランダム生成。交差のない一本道=ヘビ型は除外。解は必ず1通り) ----
 function cnt(S,W){let n=0;const g={};(function f(i,u){if(i==S.length){n++;return}
  for(let w=0;w<W.length;w++){if(u>>w&1||W[w].length!=S[i].length)continue;const st=[];let ok=1;
   S[i].forEach((k,j)=>{if(g[k]===undefined){g[k]=W[w][j];st.push(k)}else if(g[k]!=W[w][j])ok=0});
   if(ok)f(i+1,u|1<<w);st.forEach(k=>delete g[k])}})(0,0);return n}
-function g1(){const T=TP[R(3)],tr=R(2);
- const S=T.map(([r,c,d,l])=>[...Array(l).keys()].map(i=>{const a=r+(d=='V'?i:0),b=c+(d=='H'?i:0);return(tr?[b,a]:[a,b])+''}));
- const ks=[...new Set(S.flat())],H=Math.max(...ks.map(k=>+k.split(',')[0]))+1,C=Math.max(...ks.map(k=>+k.split(',')[1]))+1;
- let mp,W,A,ok=0,tries=0;
- while(!ok){tries++;const ids=pick(7+R(4));mp={};ks.forEach(k=>mp[k]=ids[R(ids.length)]);W=S.map(s=>s.map(k=>mp[k]));
-  A=W;ok=new Set(A.map(w=>w+'')).size==6&&cnt(S,A)==1}   // 余りのカギなし。文字の使い回しでひっかけ、解は必ず1通り
+const SKN=7;
+function skValid(T){const o=new Set(T.flatMap(w=>w.cs.map(p=>p+''))),runs=[];
+ for(let r=0;r<SKN;r++){let run=[];for(let c=0;c<=SKN;c++){if(c<SKN&&o.has(r+','+c))run.push(r+','+c);else{if(run.length>1)runs.push('H'+run);run=[]}}}
+ for(let c=0;c<SKN;c++){let run=[];for(let r=0;r<=SKN;r++){if(r<SKN&&o.has(r+','+c))run.push(r+','+c);else{if(run.length>1)runs.push('V'+run);run=[]}}}
+ const nm=T.map(w=>w.d+w.cs.map(p=>p+''));return runs.length==T.length&&runs.every(x=>nm.includes(x))&&new Set(nm).size==T.length}
+function mkSk(){const L=()=>3+R(4),put=(d,r,c,l)=>({d,cs:[...Array(l).keys()].map(i=>d=='H'?[r,c+i]:[r+i,c])}),fits=w=>w.cs.every(([r,c])=>r>=0&&r<SKN&&c>=0&&c<SKN);
+ for(;;){let w0;do{w0=put(R(2)?'H':'V',R(SKN),R(SKN),L())}while(!fits(w0));const ws=[w0];let ok=1;
+  while(ws.length<6){let pl=0;
+   for(let t=0;t<300&&!pl;t++){const a=ws[R(ws.length)],[r,c]=a.cs[R(a.cs.length)],l=L(),j=R(l),w=a.d=='H'?put('V',r-j,c,l):put('H',r,c-j,l);
+    if(fits(w)&&skValid(ws.concat([w]))){ws.push(w);pl=1}}
+   if(!pl){ok=0;break}}
+  if(!ok)continue;
+  const sh=(a,b)=>a.cs.filter(p=>b.cs.some(q=>q+''==p+'')),deg=ws.map((a,i)=>ws.filter((b,j)=>i!=j&&sh(a,b).length).length);
+  let plus=0;ws.forEach((a,i)=>ws.forEach((b,j)=>{if(i<j)sh(a,b).forEach(p=>{const e=x=>x.cs[0]+''==p+''||x.cs[x.cs.length-1]+''==p+'';if(!e(a)&&!e(b))plus++})}));
+  if(Math.max(...deg)<3||plus<1)continue;   // 一本道(ヘビ型)や「+」交差のない盤面は除外
+  const all=ws.flatMap(w=>w.cs),mr=Math.min(...all.map(p=>p[0])),mc=Math.min(...all.map(p=>p[1]));
+  return{S:ws.map(w=>w.cs.map(([r,c])=>(r-mr)+','+(c-mc))),H:Math.max(...all.map(p=>p[0]))-mr+1,C:Math.max(...all.map(p=>p[1]))-mc+1}}}
+function g1(){let S,H,C,mp,W,ks,tries=0;
+ for(;;){({S,H,C}=mkSk());ks=[...new Set(S.flat())];let ok=0;
+  for(let t=0;t<200&&!ok;t++){tries++;const ids=pick(7+R(4));mp={};ks.forEach(k=>mp[k]=ids[R(ids.length)]);W=S.map(s=>s.map(k=>mp[k]));
+   ok=new Set(W.map(w=>w+'')).size==6&&cnt(S,W)==1}   // 文字の使い回しでひっかけ。解は1通りのものだけ
+  if(ok)break}
  const st=shuf(ks).slice(0,3);let b=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;
  for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c;b+=mp[k]===undefined?'<i></i>':`<b>${st.includes(k)?'①②③'[st.indexOf(k)]:''}</b>`}
- return{ans:st.map(k=>mp[k]),tries,papers:[`<div class="sk">${b}</div><div class="wl">${shuf(A).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`]}}
+ return{ans:st.map(k=>mp[k]),tries,papers:[`<div class="sk">${b}</div><div class="wl">${shuf(W).map(w=>`<div>${row(w)}</div>`).join('')}</div></div>`]}}
 // ---- 謎3: しりとり(6単語・同頭/同末をあえて重ね、つなぎ方は1通り・紙にバラバラ配置) ----
 const hp=ws=>{let n=0;const f=(l,u)=>{if(n>1)return;if(u==63){n++;return}for(let i=0;i<6;i++)if(!(u>>i&1)&&(l<0||ws[l][2]==ws[i][0]))f(i,u|1<<i)};f(-1,0);return n};
 function g2(){let W,t=0,ok=0;
@@ -97,9 +110,9 @@ function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen
 function fit(){const p=$('#pz');p.style.setProperty('--w',WU[cur+1]);p.style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/WU[cur+1])+'px')}
 window.onresize=()=>{if(D)fit()};
 function render(){
- $('#tabs').innerHTML=[-1,0,1,2,3,4,5,6].map(i=>`<button data-t="${i}" class="${i==cur?'on':''}">${i<0?'表':i<6?'Q'+(i+1):'★'}</button>`).join('');
+ $('#tabs').innerHTML=[-1,0,1,2,3,4,5,6].map(i=>`<button data-t="${i}" class="${i==cur?'on':''}">${i<0?'ITEM':i<6?'Q'+(i+1):'Final'}</button>`).join('');
  fit();const P=cur<0?[tbl(k=>G(TBL[k],32))]:cur<6?D[cur].papers:[FIG];
- $('#pz').innerHTML=P.map((p,i)=>{const im=(IM[cur]||[])[i];return`<div class="paper"><div class="qn">${cur<0?'表':cur<6?'Q'+(cur+1):'★'}</div>${im?`<img class="rule" src="${IMG(im)}" data-n="rule-${im}.png" alt="">`:''}${p}</div>`}).join('');
+ $('#pz').innerHTML=P.map((p,i)=>{const im=(IM[cur]||[])[i];return`<div class="paper"${cur<0?' style="padding-top:12px"':''}>${cur<0?'':`<div class="qn">${cur<6?'Q'+(cur+1):'Final'}</div>`}${im?`<img class="rule" src="${IMG(im)}" data-n="rule-${im}.png" alt="">`:''}${p}</div>`}).join('');
  document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
  $('#kb').hidden=cur!=6;drawAns();if(cur==6)drawKb()}
 function drawAns(){const a=$('#ans');if(!a)return;a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('')}

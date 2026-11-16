@@ -1,18 +1,19 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <title>架空の言語でベタ謎解き！</title>
 <style>
 :root{--u:36px;--w:10}
-body{margin:0;padding:10px;min-height:100vh;box-sizing:border-box;color:#3a2a18;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+body{margin:0;padding:10px;min-height:100vh;box-sizing:border-box;color:#3a2a18;font-family:"Noto Sans JP",sans-serif;
 background:radial-gradient(ellipse at 50% 25%,#fff4 0,#0000 60%,#0000001a),repeating-linear-gradient(90deg,#0000000a 0 2px,#0000 2px 13px),#d6b283}
 .wrap{max-width:760px;margin:auto}
 #top{display:flex;justify-content:space-between;align-items:center;background:#2a2622;border-radius:10px;padding:6px 14px;box-shadow:0 3px 8px #0008}
 #tm{font-family:monospace;font-size:24px;color:#2a2018}
 button{font:inherit;background:#f3ead6;color:#222;border:1px solid #b9a98a;border-radius:6px;padding:6px 10px;margin:2px;cursor:pointer;box-shadow:0 2px 0 #b9a98a}
-button.on{background:#ffe48a}button:disabled{opacity:.4}#tabs button{padding:6px 8px}
+button.on{background:#ffe48a}button:disabled{opacity:.4}
 .paper{background:#fffdf5;color:#222;padding:0 12px 12px;margin:14px auto;box-shadow:0 4px 12px #0009;width:calc(var(--u)*var(--w) + 24px);max-width:100%;box-sizing:border-box;overflow:hidden;
 background-image:repeating-linear-gradient(0deg,#0000 0 27px,#0000000a 27px 28px)}
 .paper:nth-child(odd){transform:rotate(-.4deg)}.paper:nth-child(even){transform:rotate(.3deg)}
-.qn{display:inline-block;background:#000;color:#fff;font:700 15px sans-serif;padding:3px 10px;margin:0 0 10px -12px}
+.qn{display:inline-block;background:#000;color:#fff;font-weight:700;font-size:15px;padding:3px 10px;margin:0 0 10px -12px}
 .rule{display:block;width:100%;height:auto;margin:0 0 10px}
 .ph{border:2px dashed #aaa;color:#999;font:12px monospace;padding:22px 8px;text-align:center;margin-bottom:10px}
 .gw{display:inline-block;width:calc(var(--u)*var(--k));height:calc(var(--u)*var(--k));vertical-align:middle}.gw svg{width:100%;height:100%;display:block;color:#222}
@@ -25,11 +26,11 @@ background-image:repeating-linear-gradient(0deg,#0000 0 27px,#0000000a 27px 28px
 .sc{position:relative;width:calc(var(--u)*9.5)}.sc>span{position:absolute;white-space:nowrap;line-height:0}
 .cl{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}.cl span{background:#000;color:#fff;font-family:monospace;font-weight:700;font-size:calc(var(--u)*.5);padding:2px 8px;border-radius:3px}
 .ex{margin-top:14px;font-size:calc(var(--u)*.6)}
-.pcs{display:flex;flex-wrap:wrap;gap:calc(var(--u)*.5)}.pc{display:grid;gap:1px}
+.pcs{display:flex;flex-wrap:wrap;gap:calc(var(--u)*.5);align-items:flex-start}.pc{display:grid;gap:1px;align-content:start}
 .pc b,.pc i{width:var(--u);height:var(--u);box-sizing:border-box;display:flex;align-items:center;justify-content:center}.pc b{border:1.5px solid #333}
 .fg{display:grid;gap:4px;justify-content:start;margin-bottom:6px}.fg b{width:var(--u);height:var(--u);border:2px solid #333;border-radius:3px;box-sizing:border-box;background:#fff}
 .fg b.hl{background:#f6d78f}.fg small{text-align:center;font-weight:700;font-size:calc(var(--u)*.4)}.fg em{color:#d22;font-style:normal;font-size:calc(var(--u)*.7);line-height:1}
-#ans{display:flex;gap:calc(var(--u)*.2);margin-top:12px}.sl{display:flex;flex-direction:column;align-items:center}.sl small{color:#999;font:11px sans-serif}
+#ans{display:flex;gap:calc(var(--u)*.2);margin-top:12px}.sl{display:flex;flex-direction:column;align-items:center}.sl small{color:#999;font-size:11px}
 .em{display:block;width:calc(var(--u)*1.1);height:calc(var(--u)*1.1);border:2px dashed #999;border-radius:4px;box-sizing:border-box}
 .ng{animation:sh .3s}@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 #kb{background:#cdb185;box-shadow:inset 0 2px 6px #0003;border-radius:10px;padding:8px;margin:12px 0}
@@ -44,8 +45,6 @@ a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-deco
 /* 手元感・ゲーム感 */
 #top{border:3px solid #8d8d8d;background:linear-gradient(#f6f6f6,#cfcfcf);border-radius:40px;padding:6px 18px;position:relative}
 #pn{color:#f55;margin-right:10px;opacity:0}#pn.f{animation:pn 1s}@keyframes pn{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-14px)}}
-#tabs{margin:12px 0 0}#tabs button{background:linear-gradient(#f7efd9,#e8dcc0);border-radius:8px 8px 0 0;border-bottom:none;box-shadow:none;margin-right:3px;font-weight:700}
-#tabs button.on{background:#ffe48a;transform:translateY(-3px);padding-bottom:9px}
 .paper{position:relative;overflow-x:clip;overflow-y:visible;animation:drop .4s both}.paper:nth-child(2){animation-delay:.12s}
 @keyframes drop{from{opacity:0;transform:translateY(-26px) rotate(-4deg)}}
 .paper::before{content:"";position:absolute;top:-9px;right:22px;width:14px;height:40px;border:3px solid #8e98a4;border-radius:9px;z-index:2;pointer-events:none}
@@ -60,9 +59,12 @@ background:linear-gradient(90deg,#d4e0e8 0 6%,#c96 6% 12%,#e8b923 12% 82%,#e9c9a
 .kg2{display:grid;grid-template-columns:repeat(11,var(--ks));gap:4px;width:max-content}
 .kg2 button,.kg2 i,.kc button{width:var(--ks);height:var(--ks);padding:0;margin:0;display:flex;align-items:center;justify-content:center;box-sizing:border-box;font-size:22px;flex:none}
 .kg2 i{background:#3a3128;border-radius:6px}.kc{display:flex;gap:4px;margin-top:6px}
+#tabs{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-width:480px;margin:12px 0 0}
+#tabs button{aspect-ratio:1;margin:0;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:700;font-size:clamp(10px,3vw,15px);background:#f3ead6}
+#tabs button.on{background:#ffe48a;border-color:#8a6d2f}
 </style></head><body><div class="wrap">
 <div id="top"><b>✉</b><span><b id="pn"></b><span id="tm">00:00.0</span></span></div>
 <div id="start"><div class="env" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><b id="ti"></b><small>▶</small></div></div></div>
 <div id="game" hidden><div id="tabs"></div><div id="pz"></div><div id="kb"></div></div>
 <div id="res" hidden></div></div>
-<script src="parts.js?v=9"></script><script src="game.js?v=9"></script></body></html>
+<script src="parts.js?v=10"></script><script src="game.js?v=10"></script></body></html>
