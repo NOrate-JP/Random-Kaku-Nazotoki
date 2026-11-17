@@ -4,4 +4,5 @@ rule-shiritori.png   しりとり(単語が散らばった紙)
 rule-baba.png        ババ抜き
 rule-polyomino.png   ポリオミノ(盤面の紙)
 rule-wordsearch.png  シークワーズ(盤面の紙)
-(五十音表・覆面算・最終問題は画像なし。新しい謎を足したら pp(...,{img:'名前'}) で rule-名前.png を出せる)
+rule-final.png       最終問題(配置の紙)
+(五十音表・覆面算は画像なし。新しい謎を足したら pp(...,{img:'名前'}) で rule-名前.png を出せる)
