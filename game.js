@@ -8,7 +8,7 @@ let POOL=[...Array(50).keys()];   // 表に採用された50文字(start時に�
 const pick=n=>shuf(POOL).slice(0,n);
 const G=(i,s=36)=>`<span class="gw" style="--k:${s/36}">${glyph(i,s)}</span>`,row=a=>`<span class="row">${a.map(i=>G(i,34)).join('')}</span>`;
 const fmt=ms=>{const s=ms/1000;return String(s/60|0).padStart(2,'0')+':'+(s%60).toFixed(1).padStart(4,'0')};
-const CIR='①②③④',pp=(h,w,o)=>({h,w,...o});
+const CIR='①②③④⑤',pp=(h,w,o)=>({h,w,...o});
 const MASK=[[0,0,0],[1,0,1],[1,0,0],[1,0,1],[0,0,0]],TR=5,TC=11;   // 表は縦5×横11。左3列の黒マス(1=黒)
 let TBL,OPEN;
 function mkTable(){OPEN=[];for(let r=0;r<TR;r++)for(let c=0;c<TC;c++)if(!(c<3&&MASK[r][c]))OPEN.push(r*TC+c);
@@ -83,7 +83,7 @@ function gBaba(n,hard){const pairs=hard?8:6,ids=pick(pairs+n),sg=ids.slice(pairs
  const ans=a.map((g,i)=>[g,P[i][0]]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[0]);
  return{ans,papers:[pp(`<div class="sc" style="height:calc(var(--u)*${H})">${a.map((g,i)=>at(P[i],R(31)-15,G(g,40))).join('')}</div>`,9.6,{img:'baba'})]}}
 // ---- 覆面算: 対応表を見て計算。ハードは対応表がバラバラのカードになって散らばる。別紙は縦に並べる ----
-function gFukumen(n,hard){const m=pick(10),x=n==3?R(377)+123:R(400)+500,y=n==3?R(400)+100:R(400)+500,num=v=>String(v).split('').map(d=>m[+d]);
+function gFukumen(n,hard){const m=pick(10),Q=n==3?[123,377,100,400]:n==4?[500,400,500,400]:[5000,4000,5000,4000],x=R(Q[1])+Q[0],y=R(Q[3])+Q[2],num=v=>String(v).split('').map(d=>m[+d]);
  let t;if(hard){const P=scatter(m.map(()=>[1.2,2.2]),10.2,5.4,.25);t=`<div class="sc" style="width:calc(var(--u)*10.2);height:calc(var(--u)*5.4)">${m.map((g,d)=>at(P[d],R(25)-12,`<div class="cd"><small>${d}</small>${G(g,34)}</div>`)).join('')}</div>`}
  else t='<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(g=>`<td>${G(g,30)}</td>`).join('')+'</tr></table>';
  return{ans:num(x+y),stack:true,papers:[pp(t,10.4),pp(`<div class="ex">${row(num(x))} + ${row(num(y))} = ?</div>`,10.4)]}}
@@ -122,22 +122,44 @@ function gPoly(n,hard){const{P,h,w,mask,dec}=mkP(hard),cells=[];mask.forEach((v,
  const html=pcs.map((q0,k)=>{const q=tf(q0,0,0),H=Math.max(...q.map(c=>c[0]))+1,W=Math.max(...q.map(c=>c[1]))+1;let s=`<div class="pc" style="grid-template-columns:repeat(${W},var(--u))">`;
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){const z=q.find(e=>e[0]==r&&e[1]==c);s+=z?`<b style="background:hsl(${k*47%360},65%,86%)">${G(z[2],30)}</b>`:'<i></i>'}return s+'</div>'});
  return{ans:st.map(i=>gl[i]),tries:0,papers:[pp(b,7.4,{img:'polyomino'}),pp(`<div class="pcs">${shuf(html).join('')}</div>`,7.4)]}}
+// ---- シークワーズ: 盤面からカギの単語(縦横斜め・逆向きも)を探して消し、残った文字をZ字(左→右・上→下)に読む。盤面には同じ文字をわざと散りばめる ----
+const DIRS=[[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
+function wsOcc(g,H,W,w){const s=new Set();for(let r=0;r<H;r++)for(let c=0;c<W;c++)for(const[dr,dc]of DIRS){const cs=[];let ok=1;
+ for(let i=0;i<w.length&&ok;i++){const rr=r+dr*i,cc=c+dc*i;if(rr<0||rr>=H||cc<0||cc>=W||g[rr*W+cc]!==w[i])ok=0;else cs.push(rr*W+cc)}
+ if(ok)s.add(cs.sort((a,b)=>a-b)+'')}return s.size}   // 揃っている場所の数(同じマスの集合は1つと数える)
+function gWordsearch(n,hard){
+ for(;;){const H=(hard?6:5)+R(2),W=(hard?6:5)+R(2),N=H*W,all=[...Array(N).keys()],rem=shuf(all).slice(0,n).sort((a,b)=>a-b),rs=new Set(rem),cand=[];
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++)for(const[dr,dc]of DIRS.slice(0,4))for(let L=3;L<=5;L++){const cs=[];let ok=1;
+   for(let i=0;i<L&&ok;i++){const rr=r+dr*i,cc=c+dc*i;if(rr<0||rr>=H||cc<0||cc>=W||rs.has(rr*W+cc))ok=0;else cs.push(rr*W+cc)}if(ok)cand.push(cs)}
+  const unc=new Set(all.filter(k=>!rs.has(k))),segs=[];let fail=0;   // 残す文字以外を、線で覆い尽くす
+  while(unc.size&&!fail){const u=[...unc][R(unc.size)],c=cand.filter(s=>s.includes(u));if(!c.length){fail=1;break}
+   const b=c.map(s=>[s.filter(x=>unc.has(x)).length+RF()*1.5,s]).sort((x,y)=>y[0]-x[0])[0][1];segs.push(b);b.forEach(x=>unc.delete(x))}
+  if(fail||segs.length<4||segs.length>9)continue;
+  for(let t=0;t<300;t++){const ids=pick(Math.min(16,Math.max(8,Math.round(N*.4)))),g=all.map(()=>ids[R(ids.length)]);   // 少ない種類を使い回して同じ文字を散りばめる
+   const words=segs.map(s=>{const w=s.map(k=>g[k]);return R(2)?w:w.reverse()});
+   if(new Set(words.map(w=>w+'')).size<words.length||!words.every(w=>wsOcc(g,H,W,w)==1))continue;   // どのカギも盤面にちょうど1か所だけ
+   const dec=[];if(hard){for(let k=0;k<60&&dec.length<2;k++){const d=words[R(words.length)].slice();d[R(d.length)]=ids[R(ids.length)];
+     if(!words.some(w=>w+''==d+'')&&!dec.some(w=>w+''==d+'')&&wsOcc(g,H,W,d)==0)dec.push(d)}if(dec.length<2)continue}   // ハード: 盤面にない偽のカギ2つ
+   const tb='<table class="t">'+[...Array(H).keys()].map(r=>'<tr>'+[...Array(W).keys()].map(c=>`<td>${G(g[r*W+c],32)}</td>`).join('')+'</tr>').join('')+'</table>';
+   return{ans:rem.map(k=>g[k]),dbg:{g,H,W,words,dec,rem},papers:[pp(tb,W+.4,{img:'wordsearch'}),pp(`<div class="wl">${shuf(words.concat(dec)).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,5.6)]}}}}
 // ---- 謎の登録(ここに足すと Q1〜Q6 に振り分けられる対象になる。6種を超えたら毎回ランダムに6種を選ぶ) ----
-const PUZ=[{id:'gojuon',gen:gGojuon},{id:'skeleton',gen:gSkeleton},{id:'shiritori',gen:gShiritori},{id:'baba',gen:gBaba},{id:'fukumen',gen:gFukumen},{id:'polyomino',gen:gPoly}];
+const PUZ=[{id:'gojuon',gen:gGojuon},{id:'skeleton',gen:gSkeleton},{id:'shiritori',gen:gShiritori},{id:'baba',gen:gBaba},{id:'fukumen',gen:gFukumen},{id:'polyomino',gen:gPoly},{id:'wordsearch',gen:gWordsearch}];
 // ---- 進行 ----
 const IMG=n=>`images/rule-${n}.png`;
 const PENALTY=10;  // 最終問題の誤答1回あたりの加算秒(0で無効)
 const DN=['EASY','NORMAL','HARD'],RANK=[[300,480,720],[480,720,1080],[720,1080,1620]];   // ランク境界(秒): S/A/B
 let DIFF=1;try{const v=+localStorage.getItem('kuuso_diff');if(v>=0&&v<=2)DIFF=v}catch(e){}
-let D,FA,POS,FIG,LEN,cur,fin,auto,sel,inp,solved,CW,t0,tEnd,pen=0,miss=0;
+let D,FA,POS,FIG,cur,fin,auto,sel,inp,solved,CW,t0,tEnd,pen=0,miss=0;
 function drawDif(){$('#dif').innerHTML=DN.map((n,i)=>`<button data-d="${i}" class="${i==DIFF?'on':''}">${n}</button>`).join('')}
 drawDif();
 PARTS_READY.then(()=>{$('#ti').innerHTML=[5,58,19,177,33].map(i=>G(i,30)).join('')});
-function mkFig(){const n=LEN,hl=n-1;let f='<div class="fg" style="grid-template-columns:repeat(7,var(--u))"><i></i>'+D.map((_,i)=>`<small>Q${i+1}</small>`).join('');
- for(let r=0;r<2*n-1;r++){f+=r==hl?'<em>➡</em>':'<i></i>';D.forEach((_,i)=>{const k=r-hl+POS[i]-1;f+=k>=0&&k<n?`<b class="${r==hl?'hl':''}"></b>`:'<i></i>'})}
+function mkFig(){const hl=Math.max(...POS.map(p=>p-1)),rows=hl+Math.max(...D.map((d,i)=>d.ans.length-POS[i]))+1;
+ let f='<div class="fg" style="grid-template-columns:repeat(7,var(--u))"><i></i>'+D.map((_,i)=>`<small>Q${i+1}</small>`).join('');
+ for(let r=0;r<rows;r++){f+=r==hl?'<em>➡</em>':'<i></i>';D.forEach((d,i)=>{const k=r-hl+POS[i]-1;f+=k>=0&&k<d.ans.length?`<b class="${r==hl?'hl':''}"></b>`:'<i></i>'})}
  return f+'</div><div id="ans"></div>'}
-async function start(){await PARTS_READY;mkTable();LEN=DIFF==2?4:3;
- D=shuf(PUZ).slice(0,6).map(p=>({...p.gen(LEN,DIFF==2),id:p.id}));POS=D.map(()=>1+R(LEN));FA=D.map((d,i)=>d.ans[POS[i]-1]);FIG=mkFig();
+async function start(){await PARTS_READY;mkTable();
+ const L=()=>DIFF==0?3+R(2):DIFF==2?4+R(2):3+R(3);   // 答えの文字数: EASY 3〜4 / NORMAL 3〜5 / HARD 4〜5
+ D=shuf(PUZ).slice(0,6).map(p=>({...p.gen(L(),DIFF==2),id:p.id}));POS=D.map(d=>1+R(d.ans.length));FA=D.map((d,i)=>d.ans[POS[i]-1]);FIG=mkFig();
  fin=Array(6).fill();auto=Array(6).fill(false);inp=D.map(()=>[]);solved=D.map(()=>false);sel=0;cur=0;tEnd=0;pen=0;miss=0;t0=performance.now();
  $('#dn').textContent='✉ '+DN[DIFF];$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen*1000);requestAnimationFrame(tick)}
@@ -154,7 +176,7 @@ function render(){
  $('#kb').hidden=!kbOn();drawAns();if(kbOn())drawKb()}
 function drawAns(){const a=$('#ans');if(!a||cur<0)return;
  if(cur==6)a.innerHTML=[0,1,2,3,4,5].map(i=>`<div class="sl${i==sel?' sel':''}${auto[i]?' auto':''}" data-s="${i}"><small>${i+1}</small>${fin[i]!==undefined?G(fin[i],40):'<span class="em"></span>'}</div>`).join('');
- else{const v=solved[cur]?D[cur].ans:inp[cur];a.innerHTML=[...Array(LEN).keys()].map(i=>`<div class="sl${solved[cur]?' auto':''}"><small>${i+1}</small>${v[i]!==undefined?G(v[i],40):'<span class="em"></span>'}</div>`).join('')}}
+ else{const v=solved[cur]?D[cur].ans:inp[cur];a.innerHTML=[...Array(D[cur].ans.length).keys()].map(i=>`<div class="sl${solved[cur]?' auto':''}"><small>${i+1}</small>${v[i]!==undefined?G(v[i],40):'<span class="em"></span>'}</div>`).join('')}}
 // キーボード: 表と同じ配置(縦5×横11、黒マスは空き)。1キー=1文字。横スクロール、正方形キー
 function drawKb(){let h='<div class="ks"><div class="kg2">';
  for(let k=0;k<TR*TC;k++)h+=TBL[k]<0?'<i></i>':`<button data-g="${TBL[k]}">${G(TBL[k],36)}</button>`;
@@ -166,7 +188,7 @@ function check(){
   pen+=PENALTY;miss++;if(PENALTY){const p=$('#pn');p.textContent='+'+PENALTY;p.classList.remove('f');void p.offsetWidth;p.classList.add('f')}
   shake(()=>{fin=fin.map((x,i)=>auto[i]?x:undefined);sel=nextEmpty();drawAns()})}
  else if(DIFF==0&&cur>=0&&!solved[cur]){const a=D[cur].ans,v=inp[cur];
-  if(v.length==LEN&&v.every((x,i)=>x==a[i])){solved[cur]=true;fin[cur]=FA[cur];auto[cur]=true;render()}   // 正解→最終問題にメモ(誤答ペナルティなし)
+  if(v.length==a.length&&v.every((x,i)=>x==a[i])){solved[cur]=true;fin[cur]=FA[cur];auto[cur]=true;render()}   // 正解→最終問題にメモ(誤答ペナルティなし)
   else shake(()=>{inp[cur]=[];drawAns()})}}
 function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),k='kuuso_best'+DIFF;let best='';
  try{const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}catch(e){}
@@ -182,7 +204,7 @@ document.onclick=e=>{
  if(b.dataset.t!==undefined){cur=+b.dataset.t;return render()}
  if(b.dataset.g!==undefined){const g=+b.dataset.g;
   if(cur==6){fin[sel]=g;auto[sel]=false;const nx=[1,2,3,4,5,6].map(j=>(sel+j)%6).find(j=>fin[j]===undefined);if(nx!==undefined)sel=nx}
-  else if(DIFF==0&&cur>=0&&!solved[cur]&&inp[cur].length<LEN)inp[cur].push(g);
+  else if(DIFF==0&&cur>=0&&!solved[cur]&&inp[cur].length<D[cur].ans.length)inp[cur].push(g);
   return drawAns()}
  if(b.id=='del'){if(cur==6){const i=fin[sel]!==undefined?sel:fin.map((x,j)=>x!==undefined?j:-1).filter(j=>j>=0).pop();if(i!==undefined){fin[i]=undefined;auto[i]=false;sel=i}}else inp[cur].pop();return drawAns()}
  if(b.id=='ok')check()};
