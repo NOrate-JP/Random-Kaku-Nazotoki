@@ -1,8 +1,13 @@
 // 架空の言語でベタ謎解き
-// 【謎の追加方法】gen(n,hard) を作って末尾の PUZ に1行足す。
-//   n=答えの文字数(3/4), hard=ハードか。戻り値 {ans:[文字id×n], papers:[pp(html,幅(マス数),{img:'画像名'}),...], stack:true(縦並び)}
-//   文字は pick(n) で出す(表に採用された50文字だけ)。解が必ず1通りになるよう、作ったら検証して作り直すこと。
-const $=s=>document.querySelector(s),R=n=>Math.random()*n|0,RF=Math.random;
+// 【謎の追加方法】gen(n,hard) を作って PUZ に1行足す。
+//   n=答えの文字数(3/4), hard=HARD以上か。戻り値 {ans:[文字id×n], papers:[pp(html,幅(マス数),{img:'画像名'}),...], stack:true(縦並び), item:'ITEM欄に置く物(任意)'}
+//   文字は pick(n) で出す(表に採用された50文字だけ)。乱数は R()/RF()/shuf() を使う(シードで同じ問題を再現するため Math.random は使わない)。
+//   解が必ず1通りになるよう、作ったら検証して作り直すこと。ルール画像は images/rule-画像名.png(HARD以上は -hard.png)。
+const $=s=>document.querySelector(s);
+let rnd=Math.random;const R=n=>rnd()*n|0,RF=()=>rnd();
+function seededRnd(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}
+ h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);let a=(h^h>>>16)>>>0;
+ return()=>{a=a+1831565813|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const shuf=a=>{a=[...a];for(let i=a.length;i>1;){const j=R(i--);[a[i],a[j]]=[a[j],a[i]]}return a};
 let POOL=[...Array(50).keys()];   // 表に採用された50文字(start時に決まる)。全問題・答えはここからだけ出す
 const pick=n=>shuf(POOL).slice(0,n);
@@ -24,17 +29,23 @@ function scatter(sz,W,H,gap,ex){for(;;){const P=[];let ok=1;
   if(!pl)ok=0}
  if(ok)return P}}
 const at=(p,rot,h)=>`<span style="left:calc(var(--u)*${p[0].toFixed(2)});top:calc(var(--u)*${p[1].toFixed(2)});transform:rotate(${rot}deg)">${h}</span>`;
-// ---- 五十音表(Q): 空の表に番号。ハードは紙をハサミで真っ直ぐ3つに切って並べ替え、1〜2枚は上下逆さ ----
-function gGojuon(n,hard){
- if(!hard){const cl=shuf(OPEN).slice(0,n);return{ans:cl.map(k=>TBL[k]),papers:[pp(tbl(k=>cl.includes(k)?`<b class="mk">${CIR[cl.indexOf(k)]}</b>`:''),11.2)]}}
- let c1,f1,c2,f2;do{c1=3+R(3);f1=.25+RF()*.5;c2=c1+2+R(8-c1);f2=.25+RF()*.5}while(Math.abs(f1-f2)<.2||Math.abs(f1+f2-1)<.15);   // マスの途中で切る(切り口の半端なマスで見分けられる)
- const x1=c1+f1,x2=c2+f2,cl=shuf(OPEN.filter(k=>k%TC!=c1&&k%TC!=c2)).slice(0,n);   // 印は切られるマスを避ける
- const piece=(a,b)=>{let h='';for(let k=0;k<TR*TC;k++)h+=TBL[k]<0?'<div class="bk"></div>':`<div>${cl.includes(k)?`<b class="mk">${CIR[cl.indexOf(k)]}</b>`:''}</div>`;
-  return`<div class="cp" style="width:calc(var(--u)*${(b-a).toFixed(3)})"><div class="cg" style="left:calc(var(--u)*${(-a).toFixed(3)})">${h}</div></div>`};
- const rot=shuf([0,1,2]).slice(0,1+R(2)),rg=[[0,x1],[x1,x2],[x2,TC]];
- const pcs=rg.map(([a,b],i)=>`<div class="cut" style="transform:rotate(${(rot.includes(i)?180:0)+R(7)-3}deg);margin-top:calc(var(--u)*${(RF()*.6).toFixed(2)})"><div class="ci" style="padding:10px ${b==TC?10:0}px 10px ${a==0?10:0}px">${piece(a,b)}</div></div>`);
- let o;do{o=shuf([0,1,2])}while(o+''=='0,1,2');
- return{ans:cl.map(k=>TBL[k]),papers:[pp(`<div class="cuts">${o.map(i=>pcs[i]).join('')}</div>`,7.6,{raw:1})]}}
+// ---- 五十音表(Q): 空の表に番号。HARD以上は、Q○の札がある紙そのものをハサミで真っ直ぐ3つに切って並べ替え、1〜2枚は上下逆さ ----
+function gGojuon(n,hard){const o={};let c1=0,c2=0,x1=0,x2=0,rot=[],ordp=[],jit=[];
+ if(hard){for(;;){c1=3+R(3);const f1=.25+RF()*.5;c2=c1+2+R(8-c1);const f2=.25+RF()*.5;if(Math.abs(f1-f2)>=.2&&Math.abs(f1+f2-1)>=.15){x1=c1+f1;x2=c2+f2;break}}   // マスの途中で切る
+  const rs=shuf([0,1,2]).slice(0,1+R(2));rot=[0,1,2].map(i=>(rs.includes(i)?180:0)+R(7)-3);jit=[0,1,2].map(()=>(RF()*.6).toFixed(2));do{ordp=shuf([0,1,2])}while(ordp+''=='0,1,2')}
+ const okCell=k=>!hard||(k%TC!=c1&&k%TC!=c2);   // 印は切られるマスを避ける
+ let cl=shuf(OPEN.filter(okCell)).slice(0,n);const init=cl.slice();
+ const build=()=>{const f=k=>cl.includes(k)?`<b class="mk">${CIR[cl.indexOf(k)]}</b>`:'';
+  if(!hard)return[pp(tbl(f),11.2)];
+  let cells='';for(let k=0;k<TR*TC;k++)cells+=TBL[k]<0?'<div class="bk"></div>':`<div>${f(k)}</div>`;
+  const full=`<div class="pp2" style="width:calc(var(--u)*${TC} + 24px)"><div class="qn">⟦Q⟧</div><div class="cg">${cells}</div></div>`,
+   wins=[[`calc(12px + var(--u)*${x1.toFixed(3)})`,'0px'],[`calc(var(--u)*${(x2-x1).toFixed(3)})`,`calc(-12px - var(--u)*${x1.toFixed(3)})`],[`calc(var(--u)*${(TC-x2).toFixed(3)} + 12px)`,`calc(-12px - var(--u)*${x2.toFixed(3)})`]];
+  const pcs=wins.map(([w,ml],i)=>`<div class="cut" style="transform:rotate(${rot[i]}deg);margin-top:calc(var(--u)*${jit[i]})"><div class="cw2" style="width:${w}"><div style="margin-left:${ml}">${full}</div></div></div>`);
+  return[pp(`<div class="cuts">${ordp.map(i=>pcs[i]).join('')}</div>`,7.6,{raw:1})]};
+ o.ans=cl.map(k=>TBL[k]);o.papers=build();
+ o.adj=(p,val)=>{const k=TBL.indexOf(val);if(k<0||!okCell(k)||(cl.includes(k)&&cl[p]!=k))return false;cl[p]=k;o.ans[p]=val;if(o.raw)o.raw[p]=val;o.papers=build();return true};   // 最終問題の都合で印の位置を動かす
+ o.reset=()=>{cl=init.slice();o.ans=cl.map(k=>TBL[k]);o.papers=build()};
+ return o}
 // ---- スケルトン: 盤面は毎回ランダム生成(ヘビ型除外)。カギは別紙。ハードは余りのカギ2つ(1文字違いの偽物)。解は必ず1通り ----
 function cnt(S,W){let n=0;const g={};(function f(i,u){if(i==S.length){n++;return}
  for(let w=0;w<W.length;w++){if(u>>w&1||W[w].length!=S[i].length)continue;const st=[];let ok=1;
@@ -83,11 +94,12 @@ function gBaba(n,hard){const pairs=hard?8:6,ids=pick(pairs+n),sg=ids.slice(pairs
  const H=hard?8.2:7.4,P=scatter(a.map(()=>[1.15,1.15]),9.5,H,.3,(i,x,Q)=>!sg.includes(a[i])||Q.every((q,j)=>!sg.includes(a[j])||Math.abs(q[0]-x)>=1));
  const ans=a.map((g,i)=>[g,P[i][0]]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[0]);
  return{ans,papers:[pp(`<div class="sc" style="height:calc(var(--u)*${H})">${a.map((g,i)=>at(P[i],R(31)-15,G(g,40))).join('')}</div>`,9.6,{img:'baba'})]}}
-// ---- 覆面算: 対応表を見て計算。ハードは対応表がバラバラのカードになって散らばる。別紙は縦に並べる ----
+// ---- 覆面算: 対応表を見て計算。HARD以上は対応表の紙がITEM欄にバラバラに散らばる ----
 function gFukumen(n,hard){const m=pick(10),Q=n==3?[123,377,100,400]:n==4?[500,400,500,400]:[5000,4000,5000,4000],x=R(Q[1])+Q[0],y=R(Q[3])+Q[2],num=v=>String(v).split('').map(d=>m[+d]);
- let t;if(hard){const P=scatter(m.map(()=>[1.2,2.2]),10.2,5.4,.25);t=`<div class="sc" style="width:calc(var(--u)*10.2);height:calc(var(--u)*5.4)">${m.map((g,d)=>at(P[d],R(25)-12,`<div class="cd"><small>${d}</small>${G(g,34)}</div>`)).join('')}</div>`}
- else t='<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(g=>`<td>${G(g,30)}</td>`).join('')+'</tr></table>';
- return{ans:num(x+y),stack:true,papers:[pp(t,10.4),pp(`<div class="ex">${row(num(x))} + ${row(num(y))} = ?</div>`,10.4)]}}
+ const eq=pp(`<div class="ex">${row(num(x))} + ${row(num(y))} = ?</div>`,10.4);
+ if(!hard)return{ans:num(x+y),stack:true,papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(g=>`<td>${G(g,30)}</td>`).join('')+'</tr></table>'].map(t=>pp(t,10.4)).concat([eq])};
+ const P=scatter(m.map(()=>[2.5,1.3]),10.6,7.4,.3);
+ return{ans:num(x+y),stack:true,papers:[eq],item:`<div class="sc itx" style="width:calc(var(--u)*10.6);height:calc(var(--u)*7.4)">${m.map((g,d)=>at(P[d],R(31)-15,`<div class="cd2">${d}=${G(g,34)}</div>`)).join('')}</div>`}}
 // ---- ポリオミノ: ピースは回転・反転なし。ハードは余りのピース2つ。解は必ず1通り ----
 const norm=cs=>{const mr=Math.min(...cs.map(p=>p[0])),mc=Math.min(...cs.map(p=>p[1]));return cs.map(p=>[p[0]-mr,p[1]-mc]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])};
 const orients=cs=>{const s=new Map();let p=cs;for(let f=0;f<2;f++){for(let r=0;r<4;r++){p=p.map(([a,b])=>[b,-a]);const q=norm(p);s.set(q+'',q)}p=p.map(([a,b])=>[a,-b])}return[...s.values()]};
@@ -143,109 +155,150 @@ function gWordsearch(n,hard){
      if(!words.some(w=>w+''==d+'')&&!dec.some(w=>w+''==d+'')&&wsOcc(g,H,W,d)==0)dec.push(d)}if(dec.length<1)continue}   // ハード: 盤面にない偽のカギ1つ
    const tb='<table class="t">'+[...Array(H).keys()].map(r=>'<tr>'+[...Array(W).keys()].map(c=>`<td>${G(g[r*W+c],32)}</td>`).join('')+'</tr>').join('')+'</table>';
    return{ans:rem.map(k=>g[k]),dbg:{g,H,W,words,dec,rem},papers:[pp(tb,W+.4,{img:'wordsearch'}),pp(`<div class="wl">${shuf(words.concat(dec)).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,5.6)]}}}}
-// ---- 謎の登録(ここに足すと Q1〜Q6 に振り分けられる対象になる。6種を超えたら毎回ランダムに6種を選ぶ) ----
-const PUZ=[{id:'gojuon',gen:gGojuon},{id:'skeleton',gen:gSkeleton},{id:'shiritori',gen:gShiritori},{id:'baba',gen:gBaba},{id:'fukumen',gen:gFukumen},{id:'polyomino',gen:gPoly},{id:'wordsearch',gen:gWordsearch}];
-// ---- 進行 ----
-const IMG=n=>`images/rule-${n}.png`;
-const PENALTY=10;  // 最終問題の誤答1回あたりの加算秒(0で無効)
-const DN=['NORMAL','HARD','EXPERT'],RANKQ=[[50,80,120],[80,120,180],[120,180,270]];   // ランク境界: 1問あたり秒(S/A/B)。合計=これ×問題数+60秒
-// NORMAL=各問を判定・正解は「別メモ」に自動で置かれる / HARD=メモ(手入力)可・問題内容は難しめ / EXPERT=メモ禁止・問題内容はHARDと同じ
-let DIFF=1,NQ=5;try{const v=+localStorage.getItem('kuuso_diff');if(v>=0&&v<=2)DIFF=v;const q=+localStorage.getItem('kuuso_n');if([3,5,7].includes(q))NQ=q}catch(e){}
-let D,N,LAY,FANS,cur,fin,lay,memo,inp,solved,sel,CW,t0,tEnd,pen=0,miss=0;
-function drawDif(){$('#dif').innerHTML=DN.map((n,i)=>`<button data-d="${i}" class="${i==DIFF?'on':''}">${n}</button>`).join('');
- $('#nq').innerHTML=[3,5,7].map(n=>`<button data-n="${n}" class="${n==NQ?'on':''}">${n}Q</button>`).join('')}
-drawDif();
-PARTS_READY.then(()=>{$('#ti').innerHTML=[5,58,19,177,33].map(i=>GR(i,30)).join('')});
+// ---- 謎の登録(ここに足すと出題対象になる) ----
+const PUZ=[{id:'gojuon',name:'五十音表',gen:gGojuon},{id:'fukumen',name:'覆面算',gen:gFukumen},{id:'shiritori',name:'しりとり',gen:gShiritori},{id:'baba',name:'ババ抜き',gen:gBaba},
+ {id:'skeleton',name:'スケルトン',gen:gSkeleton},{id:'polyomino',name:'ポリオミノ',gen:gPoly},{id:'wordsearch',name:'シークワーズ',gen:gWordsearch}];
+function pickTypes(types,n){const a=shuf(types);if(n<=a.length)return a.slice(0,n);const ex=[];while(a.length+ex.length<n)ex.push(types[R(types.length)]);return shuf(a.concat(ex))}   // ON数より多いときは同じ種類が2問以上出る
+// ---- 設定・シード ----
+const B36='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',DN=['NORMAL','HARD','EXPERT'],RANKQ=[[50,80,120],[80,120,180],[120,180,270]];   // ランク境界: 1問あたり秒(S/A/B)。合計=これ×問題数+60秒
+const IMG=(n,hard)=>`images/rule-${n}${hard?'-hard':''}.png`,PENALTY=10,sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const normSeed=s=>(s||'').toUpperCase().replace(/[^0-9A-Z]/g,''),fmtSeed=s=>s.replace(/(.{4})(?=.)/g,'$1-'),rb=n=>{let s='';for(let i=0;i<n;i++)s+=B36[Math.random()*36|0];return s};
+// スタンダードのシード=12文字。先頭1文字(A〜I)に難易度と問題数を入れてあるので、シードだけで同じ設定・同じ問題になる。カスタムのシードはJ〜Z始まり(設定は含まない)
+const stdSeed=(d,n)=>B36[10+d*3+[3,5,7].indexOf(n)]+rb(11),cusSeed=()=>B36[19+(Math.random()*17|0)]+rb(11);
+const decodeStd=s=>{if(s.length!=12)return null;const i=s.charCodeAt(0)-65;return i>=0&&i<9?{diff:i/3|0,n:[3,5,7][i%3]}:null};
+const jstDate=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
+const MODES=[['std','STANDARD','スタンダード'],['cus','CUSTOM','カスタム'],['seed','SEED','シード'],['daily','DAILY','デイリー']];
+let MODE='std',DIFF=1,NQ=5,ON={},SEEDIN='';PUZ.forEach(p=>ON[p.id]=true);
+try{const s=JSON.parse(localStorage.getItem('kuuso_cfg')||'{}');if(MODES.some(m=>m[0]==s.mode))MODE=s.mode;if(s.diff>=0&&s.diff<=2)DIFF=s.diff;if([3,5,7].includes(s.n))NQ=s.n;if(s.on)PUZ.forEach(p=>{if(p.id in s.on)ON[p.id]=!!s.on[p.id]});SEEDIN=s.seed||''}catch(e){}
+const saveCfg=()=>{try{localStorage.setItem('kuuso_cfg',JSON.stringify({mode:MODE,diff:DIFF,n:NQ,on:ON,seed:SEEDIN}))}catch(e){}};
+const envColor=()=>MODE=='daily'?'white':MODE=='cus'?'blue':MODE=='seed'?(()=>{const d=decodeStd(normSeed(SEEDIN));return d?['brown','red','black'][d.diff]:'brown'})():['brown','red','black'][DIFF];
+function seedInfo(){const s=normSeed(SEEDIN);if(!s)return MODE=='cus'?'空欄ならランダム':'';if(s.length!=12)return s.length+'/12';const d=decodeStd(s);return MODE=='seed'?(d?`✓ ${DN[d.diff]} ${d.n}Q`:'✗ スタンダード用のシードではありません'):'✓'}
+function panel(){const df=`<div class="row2">${DN.map((n,i)=>`<button data-d="${i}" class="${i==DIFF?'on':''}">${n}</button>`).join('')}</div>`,nq=`<div class="row2">${[3,5,7].map(n=>`<button data-n="${n}" class="${n==NQ?'on':''}">${n}Q</button>`).join('')}</div>`,
+ si=`<input id="seedin" maxlength="14" placeholder="XXXX-XXXX-XXXX" value="${SEEDIN}" autocomplete="off" spellcheck="false"><div id="seedst" class="st">${seedInfo()}</div>`;
+ if(MODE=='std')return df+nq;
+ if(MODE=='cus')return df+nq+`<div class="chips">${PUZ.map(p=>`<button data-ty="${p.id}" class="${ON[p.id]?'on':''}">${p.name}</button>`).join('')}</div>`+si;
+ if(MODE=='seed')return si;
+ return`<div class="st big2">HARD ・ 7Q ・ ${jstDate()}</div><div class="st">今日は全員が同じ問題です</div>`}
+function drawStart(){
+ $('#start').innerHTML=`<div class="ttl"><div class="gl" id="ti"></div><h1>架空の言語で<br>ベタ謎解き！</h1></div><div class="modes">${MODES.map(([k,e,j])=>`<button data-mode="${k}" class="${k==MODE?'on':''}">${e}<small>${j}</small></button>`).join('')}</div>`+
+  `<div class="env ${envColor()}" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><small>▶ TAP TO OPEN</small></div></div><div class="panel">${panel()}</div>`;
+ PARTS_READY.then(()=>{const t=$('#ti');if(t)t.innerHTML=[5,58,19,177,33,102,64].map(i=>GR(i,34)).join('')})}
+function mkConf(){
+ if(MODE=='std')return{mode:'std',diff:DIFF,n:NQ,types:PUZ,seed:stdSeed(DIFF,NQ)};
+ if(MODE=='daily')return{mode:'daily',diff:1,n:7,types:PUZ,seed:'DAILY'+jstDate().replace(/-/g,'')};
+ const s=normSeed(SEEDIN);
+ if(MODE=='seed'){const d=decodeStd(s);return d?{mode:'seed',diff:d.diff,n:d.n,types:PUZ,seed:s}:{err:s.length!=12?'12文字のシードを入力してください':'スタンダード用のシードではありません'}}
+ const types=PUZ.filter(p=>ON[p.id]);if(!types.length)return{err:'出題内容を1つ以上ONにしてください'};
+ if(SEEDIN&&s.length!=12)return{err:'シードは12文字です(空欄ならランダム)'};
+ return{mode:'cus',diff:DIFF,n:NQ,types,seed:s||cusSeed()}}
 // ---- 最終問題の配置: 答えがどの行に入るか分からない。線=同じ文字が入る四角。答えが全部分かれば必ず1通りに決まる ----
 function nAss(L,A,lines,cap){const n=L.length,as=Array(n).fill(-1),used=Array(n).fill(false),by=L.map((_,r)=>lines.filter(l=>Math.max(l[0],l[2])==r)),sols=[];
  (function f(r){if(sols.length>=cap)return;if(r==n){sols.push(as.slice());return}
   for(let a=0;a<n;a++){if(used[a]||A[a].length!=L[r])continue;as[r]=a;
    if(by[r].every(([r1,c1,r2,c2])=>A[as[r1]][c1]===A[as[r2]][c2])){used[a]=true;f(r+1);used[a]=false}}
   as[r]=-1})(0);return sols}   // 長さと線の条件を満たす「答え→行」の割り当てを数える
+function setLay(ord,L,ls,mp,A){const n=D.length;D.forEach((d,i)=>{d.map=mp[i];d.ans=A[i]});
+ const off=L.map(()=>R(5)*.35),mk=L.map(l=>R(l)),nums=shuf([...Array(n).keys()]);   // 各行1マスに番号。番号順に拾うと最後の答え
+ FANS=[...Array(n).keys()].map(k=>{const r=nums.indexOf(k);return A[ord[r]][mk[r]]});
+ LAY={ord,L,lines:ls,off,mk,num:nums,LW:Math.max(...L.map((l,r)=>off[r]+l*1.2))-.2,LH:(n-1)*2.1+1}}
 function mkLayout(){const n=D.length;
  for(let att=0;att<300;att++){
-  const mp=D.map(()=>[...Array(200).keys()]),lk=D.map(()=>new Set());   // 謎ごとの文字の入れ替え表 / 入れ替えない文字
-  D.forEach((d,i)=>{if(d.id=='gojuon')d.raw.forEach(x=>lk[i].add(x))});   // 五十音表の答えは表のとおりなので動かせない
+  D.forEach(d=>{if(d.reset){d.reset();d.raw=d.ans.slice()}});
+  const mp=D.map(()=>[...Array(200).keys()]),lk=D.map(()=>new Set()),pl=D.map(()=>new Set());   // 文字の入れ替え表 / 入れ替えない文字 / 動かさない印の位置
   const fa=i=>D[i].raw.map(x=>mp[i][x]),ord=shuf([...Array(n).keys()]),L=ord.map(i=>D[i].raw.length);
-  const force=(i,p,val)=>{const x=D[i].raw[p];if(mp[i][x]===val)return true;if(lk[i].has(x))return false;const y=mp[i].indexOf(val);if(lk[i].has(y))return false;
+  const force=(i,p,val)=>{const d=D[i];
+   if(d.adj){if(pl[i].has(p))return false;if(d.raw[p]===val){pl[i].add(p);return true}if(!d.adj(p,val))return false;pl[i].add(p);return true}
+   const x=d.raw[p];if(mp[i][x]===val)return true;if(lk[i].has(x))return false;const y=mp[i].indexOf(val);if(lk[i].has(y))return false;
    [mp[i][x],mp[i][y]]=[mp[i][y],mp[i][x]];lk[i].add(x);return true};
   for(let it=0;it<80;it++){
    const A=D.map((_,i)=>fa(i)),all=[];
    for(let r=0;r<n-1;r++)for(let c=0;c<L[r];c++)for(let c2=0;c2<L[r+1];c2++)if(A[ord[r]][c]===A[ord[r+1]][c2])all.push([r,c,r+1,c2]);
    const s=nAss(L,A,all,2);
    if(s.length==1){let ls=all.slice();for(const l of shuf(all)){const t=ls.filter(x=>x!==l);if(nAss(L,A,t,2).length==1)ls=t}   // 線を必要なものだけに間引く
-    D.forEach((d,i)=>{d.map=mp[i];d.ans=A[i]});
-    const off=L.map(()=>R(5)*.35),mk=L.map(l=>R(l)),nums=shuf([...Array(n).keys()]);   // 各行1マスに番号。番号順に拾うと最後の答え
-    FANS=[...Array(n).keys()].map(k=>{const r=nums.indexOf(k);return A[ord[r]][mk[r]]});
-    LAY={ord,L,lines:ls,off,mk,num:nums,LW:Math.max(...L.map((l,r)=>off[r]+l*1.2))-.2,LH:(n-1)*2.1+1};return true}
+    setLay(ord,L,ls,mp,A);return true}
    const alt=s.find(x=>x.some((a,r)=>a!=ord[r])),dr=[...Array(n).keys()].filter(r=>alt[r]!=ord[r]),r=dr[R(dr.length)],r2=r==0?1:r==n-1?n-2:r+(R(2)?1:-1),p=R(L[r]),q=R(L[r2]),a=ord[r],b=ord[r2];
    if(!force(a,p,A[b][q]))force(b,q,A[a][p])}   // 区別のつかない行の間に、同じ文字の組を作る
  }
  return false}
-async function start(){await PARTS_READY;mkTable();N=NQ;let ok=0;
- for(let t=0;t<40&&!ok;t++){D=shuf(PUZ).slice(0,N).map(p=>{const x=p.gen(3+R(2),DIFF>=1);return{...x,id:p.id,raw:x.ans.slice(),map:[...Array(200).keys()]}});ok=mkLayout()}
- lay=LAY.L.map(l=>Array(l).fill());fin=Array(N).fill();memo=D.map(d=>Array(d.ans.length).fill());inp=D.map(()=>[]);solved=D.map(()=>false);sel=null;cur=0;tEnd=0;pen=0;miss=0;t0=performance.now();
- $('#dn').textContent='✉ '+DN[DIFF]+' '+N+'Q';$('#start').hidden=true;$('#res').hidden=true;$('#game').hidden=false;render();tick()}
+function looseLayout(){const n=D.length,ord=shuf([...Array(n).keys()]),A=D.map(d=>d.raw),L=ord.map(i=>A[i].length),all=[];
+ for(let r=0;r<n-1;r++)for(let c=0;c<L[r];c++)for(let c2=0;c2<L[r+1];c2++)if(A[ord[r]][c]===A[ord[r+1]][c2])all.push([r,c,r+1,c2]);
+ setLay(ord,L,all,D.map(()=>[...Array(200).keys()]),A)}
+// ---- 進行 ----
+let CONF,GD=1,D,N,LAY,FANS,cur,fin,fsel,memo,inp,solved,CW,t0,tEnd=0,pen=0,miss=0;
+async function countdown(){const c=$('#cdn');c.hidden=false;for(const t of['3','2','1','START!']){c.innerHTML=`<div class="cn">${t}</div>`;await sleep(t=='START!'?650:760)}c.hidden=true}
+function judge(ok){const j=$('#jg');j.hidden=false;j.innerHTML=`<div class="jo ${ok?'ok':'ng'}"></div>`;setTimeout(()=>{j.hidden=true},950)}
+async function begin(c){CONF=c;GD=c.diff;N=c.n;await PARTS_READY;
+ rnd=seededRnd(c.seed);mkTable();let ok=0;
+ for(let t=0;t<300&&!ok;t++){D=pickTypes(c.types,N).map(p=>{const x=p.gen(3+R(2),GD>=1);return Object.assign(x,{id:p.id,raw:x.ans.slice(),map:[...Array(200).keys()]})});ok=mkLayout()}
+ if(!ok)looseLayout();
+ rnd=Math.random;
+ fin=Array(N).fill();fsel=0;memo=D.map(d=>Array(d.ans.length).fill());inp=D.map(()=>[]);solved=D.map(()=>false);cur=0;tEnd=0;pen=0;miss=0;
+ $('#dn').textContent=DN[GD]+' '+N+'Q'+(c.mode=='daily'?' DAILY':'');$('#tm').textContent='00:00.0';$('#start').hidden=true;$('#top').hidden=false;
+ await countdown();$('#game').hidden=false;t0=performance.now();render();tick()}
+async function launch(){const v=$('#env');if(!v||v.classList.contains('open'))return;
+ const c=mkConf();if(c.err){const st=$('#seedst');if(st){st.textContent=c.err;st.classList.add('bad')}else alert(c.err);v.classList.add('shk');setTimeout(()=>v.classList.remove('shk'),450);return}
+ saveCfg();v.classList.add('open');await sleep(750);await begin(c)}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen*1000);requestAnimationFrame(tick)}
 function fit(){$('#pz').style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/CW)+'px')}
 window.onresize=()=>{if(D)fit()};
-const kbOn=()=>cur==N||(cur==-2&&DIFF==1)||(DIFF==0&&cur>=0&&cur<N&&!solved[cur]);
+const kbOn=()=>cur==N||(GD<2&&cur>=0&&cur<N&&!solved[cur]);
 function render(){
- const tabs=[-1,...(DIFF<2?[-2]:[]),...[...Array(N).keys()],N];$('#tabs').style.setProperty('--tn',tabs.length);
- $('#tabs').innerHTML=tabs.map(i=>`<button data-t="${i}" class="${i==cur?'on':''}${i>=0&&i<N&&solved[i]?' ok':''}">${i==-1?'ITEM':i==-2?'MEMO':i<N?'Q'+(i+1):'Final'}</button>`).join('');
- const badge=cur<N?'Q'+(cur+1):'Final';let P;
- if(cur==-1)P=[pp(tbl(k=>G(TBL[k],32)),11.2,{plain:1})];
- else if(cur==-2)P=[pp('<div id="ans"></div>',6.4,{badge:'MEMO'})];
- else if(cur<N){P=D[cur].papers.slice();if(DIFF==0)P.push(pp('<div id="ans"></div>',4.8))}
- else P=[pp(`<div id="fl" style="width:calc(var(--u)*${LAY.LW.toFixed(2)});height:calc(var(--u)*${LAY.LH.toFixed(2)})"></div><div id="ans"></div>`,Math.max(LAY.LW,N*1.35)+.4,{img:'final'})];
+ const tabs=[-1,...[...Array(N).keys()],N];$('#tabs').style.setProperty('--tn',tabs.length);
+ $('#tabs').innerHTML=tabs.map(i=>`<button data-t="${i}" class="${i==cur?'on':''}${i>=0&&i<N&&solved[i]?' ok':''}">${i==-1?'ITEM':i<N?'Q'+(i+1):'Last'}</button>`).join('');
+ const badge=cur<N?'Q'+(cur+1):'Last';let P;
+ if(cur==-1){P=[pp(tbl(k=>G(TBL[k],32)),11.2,{plain:1})];D.forEach((d,i)=>{if(d.item)P.push(pp(d.item,10.6,{raw:1,itemQ:i}))})}   // ITEM: 表 + 覆面算(HARD以上)の散らばった紙
+ else if(cur<N){P=D[cur].papers.slice();if(GD<2)P.push(pp('<div id="ans"></div>',4.8))}
+ else{P=[pp(`<div id="fl" style="width:calc(var(--u)*${LAY.LW.toFixed(2)});height:calc(var(--u)*${LAY.LH.toFixed(2)})"></div><div id="ans"></div>`,Math.max(LAY.LW,N*1.35)+.4,{img:'final',nosuf:1})];
+  if(GD<2)P.push(pp('<div id="memo"></div>',6.4,{badge:'MEMO'}))}
  CW=Math.max(...P.map(p=>p.w));fit();$('#pz').className=cur>=0&&cur<N&&D[cur].stack?'stack':'';
- const mp=cur>=0&&cur<N?D[cur].map:null;
- $('#pz').innerHTML=P.map(p=>{const h=fx(p.h,mp),bd=p.badge||badge;return p.raw?`<div class="cutwrap"><div class="qn">${bd}</div>${h}</div>`:`<div class="paper${p.plain?' noclip':''}" style="--pw:${p.w}${p.plain?';padding-top:12px':''}">${p.plain?'':`<div class="qn">${bd}</div>`}${p.img?`<img class="rule" src="${IMG(p.img)}" data-n="rule-${p.img}.png" alt="">`:''}${h}</div>`}).join('');
+ $('#pz').innerHTML=P.map(p=>{const m=p.itemQ!==undefined?D[p.itemQ].map:cur>=0&&cur<N?D[cur].map:null,bd=p.itemQ!==undefined?'Q'+(p.itemQ+1):p.badge||badge,h=fx(p.h,m).replace(/⟦Q⟧/g,bd);
+  return p.raw?`<div class="cutwrap">${p.itemQ!==undefined?`<div class="qn">${bd}</div>`:''}${h}</div>`:`<div class="paper${p.plain?' noclip':''}" style="--pw:${p.w}${p.plain?';padding-top:12px':''}">${p.plain?'':`<div class="qn">${bd}</div>`}${p.img?`<img class="rule" src="${IMG(p.img,GD>=1&&!p.nosuf)}" data-n="rule-${p.img}${GD>=1&&!p.nosuf?'-hard':''}.png" alt="">`:''}${h}</div>`}).join('');
  document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
  $('#kb').hidden=!kbOn();drawAns();if(kbOn())drawKb()}
-const eq=(a,b)=>!!a&&!!b&&a.k==b.k&&a.r==b.r&&a.c==b.c&&a.i==b.i&&a.q==b.q;
-const val=s=>s.k=='b'?lay[s.r][s.c]:s.k=='f'?fin[s.i]:memo[s.q][s.i];
-const setv=(s,g)=>{if(s.k=='b')lay[s.r][s.c]=g;else if(s.k=='f')fin[s.i]=g;else memo[s.q][s.i]=g};
-const seqOf=k=>k=='b'?lay.flatMap((r,ri)=>r.map((_,ci)=>({k:'b',r:ri,c:ci}))):k=='f'?fin.map((_,i)=>({k:'f',i})):memo.flatMap((m,q)=>m.map((_,i)=>({k:'m',q,i})));
 const slot=(v,cls,at)=>`<div class="sl${cls||''}"${at||''}>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`;
-function drawAns(){const a=$('#ans');
+function drawAns(){
  if(cur==N){const o=LAY.off,u=(r,c)=>[o[r]+c*1.2,r*2.1];
   $('#fl').innerHTML=`<svg class="ln" viewBox="0 0 ${LAY.LW.toFixed(2)} ${LAY.LH.toFixed(2)}" preserveAspectRatio="none">${LAY.lines.map(([r1,c1,r2,c2])=>`<line x1="${(u(r1,c1)[0]+.5).toFixed(2)}" y1="${(u(r1,c1)[1]+1).toFixed(2)}" x2="${(u(r2,c2)[0]+.5).toFixed(2)}" y2="${u(r2,c2)[1].toFixed(2)}"/>`).join('')}</svg>`+
-   lay.map((row,r)=>row.map((v,c)=>`<div class="lb${eq(sel,{k:'b',r,c})?' sel':''}" data-lb="${r},${c}" style="left:calc(var(--u)*${u(r,c)[0].toFixed(2)});top:calc(var(--u)*${u(r,c)[1].toFixed(2)})">${LAY.mk[r]==c?`<small class="mn">${CIR[LAY.num[r]]}</small>`:''}${v!==undefined?GR(v,34):''}</div>`).join('')).join('');
-  a.innerHTML=fin.map((v,i)=>`<div class="sl${eq(sel,{k:'f',i})?' sel':''}" data-fs="${i}"><small>${CIR[i]}</small>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`).join('');return}
- if(!a||cur==-1)return;
- if(cur==-2)a.innerHTML=D.map((d,q)=>`<div class="mr"><b class="mq">Q${q+1}</b>${memo[q].map((v,i)=>slot(v,(DIFF==1&&eq(sel,{k:'m',q,i})?' sel':'')+(solved[q]?' auto':''),DIFF==1?` data-ms="${q},${i}"`:'')).join('')}</div>`).join('');
- else{const v=solved[cur]?D[cur].ans:inp[cur];a.innerHTML=[...Array(D[cur].ans.length).keys()].map(i=>slot(v[i],solved[cur]?' auto':'')).join('')}}
+   LAY.L.map((l,r)=>[...Array(l).keys()].map(c=>`<div class="lb" style="left:calc(var(--u)*${u(r,c)[0].toFixed(2)});top:calc(var(--u)*${u(r,c)[1].toFixed(2)})">${LAY.mk[r]==c?`<small class="mn">${CIR[LAY.num[r]]}</small>`:''}</div>`).join('')).join('');
+  $('#ans').innerHTML=fin.map((v,i)=>`<div class="sl${i==fsel?' sel':''}" data-fs="${i}"><small>${CIR[i]}</small>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`).join('');
+  const mm=$('#memo');if(mm)mm.innerHTML=D.map((d,q)=>`<div class="mr"><b class="mq">Q${q+1}</b>${memo[q].map(v=>slot(v,solved[q]?' auto':'')).join('')}</div>`).join('');return}
+ const a=$('#ans');if(!a||cur<0)return;
+ const v=solved[cur]?D[cur].ans:inp[cur];a.innerHTML=[...Array(D[cur].ans.length).keys()].map(i=>slot(v[i],solved[cur]?' auto':'')).join('')}
 // キーボード: 表と同じ配置(縦5×横11、黒マスは空き)。1キー=1文字。横スクロール、正方形キー
 function drawKb(){let h='<div class="ks"><div class="kg2">';
  for(let k=0;k<TR*TC;k++)h+=TBL[k]<0?'<i></i>':`<button data-g="${TBL[k]}">${GR(TBL[k],36)}</button>`;
  $('#kb').innerHTML=h+'</div></div><div class="kc"><button id="del">⌫</button><button id="ok">✔</button></div>'}
-function put(g){if(cur>=0&&cur<N){if(DIFF==0&&!solved[cur]&&inp[cur].length<D[cur].ans.length)inp[cur].push(g);return}
- if(!sel)return;setv(sel,g);const sq=seqOf(sel.k),i0=sq.findIndex(x=>eq(x,sel)),nx=sq.map((_,j)=>sq[(i0+1+j)%sq.length]).find(x=>val(x)===undefined);if(nx)sel=nx}
+function put(g){if(cur>=0&&cur<N){if(GD<2&&!solved[cur]&&inp[cur].length<D[cur].ans.length)inp[cur].push(g);return}
+ fin[fsel]=g;const nx=[1,2,3,4,5,6,7].map(j=>(fsel+j)%N).find(j=>fin[j]===undefined);if(nx!==undefined)fsel=nx}
 function shake(f){const a=$('#ans');a.classList.add('ng');setTimeout(()=>{a.classList.remove('ng');f()},500)}
-function check(){
- if(cur==N){if(fin.every((x,i)=>x===FANS[i])){tEnd=performance.now();return finish()}
+function check(){if(tEnd)return;
+ if(cur==N){if(fin.every((x,i)=>x===FANS[i])){tEnd=performance.now();judge(true);setTimeout(finish,1050);return}
   pen+=PENALTY;miss++;if(PENALTY){const p=$('#pn');p.textContent='+'+PENALTY;p.classList.remove('f');void p.offsetWidth;p.classList.add('f')}
-  shake(()=>{fin=Array(N).fill();sel={k:'f',i:0};drawAns()})}
- else if(DIFF==0&&cur>=0&&!solved[cur]){const a=D[cur].ans,v=inp[cur];
-  if(v.length==a.length&&v.every((x,i)=>x==a[i])){solved[cur]=true;memo[cur]=a.slice();render()}   // 正解→別メモに自動で置く(誤答ペナルティなし)
-  else shake(()=>{inp[cur]=[];drawAns()})}}
-function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),k=`kuuso_best_${DIFF}_${N}`;let best='';
- try{const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}catch(e){}
- const th=RANKQ[DIFF].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C';
- $('#tm').textContent=t;$('#game').hidden=true;$('#res').hidden=false;
- $('#res').innerHTML=`<div class="paper" style="text-align:center;--pw:8"><div class="stamp">${rk}</div><p><b>${DN[DIFF]} ${N}Q</b></p><p class="big">${t}</p><p>✗ ${miss}　🏆 ${best}</p><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('架空の言語でベタ謎解き！['+DN[DIFF]+' '+N+'Q] を '+t+'（ランク'+rk+'）でクリアしました！\n#架空言語ベタ謎解き')}">POST</a><p><button id="go">↻</button></p></div>`}
+  judge(false);shake(()=>{fin=Array(N).fill();fsel=0;drawAns()})}
+ else if(GD<2&&cur>=0&&!solved[cur]){const a=D[cur].ans,v=inp[cur];
+  if(v.length==a.length&&v.every((x,i)=>x==a[i])){solved[cur]=true;memo[cur]=a.slice();judge(true);render()}   // 正解→最終問題の画面のメモに自動で置く(誤答ペナルティなし)
+  else{judge(false);shake(()=>{inp[cur]=[];drawAns()})}}}
+function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),c=CONF;let best='';
+ try{const k=c.mode=='std'?`kuuso_best_${GD}_${N}`:c.mode=='daily'?'kuuso_daily_'+c.seed:null;if(k){const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}}catch(e){}
+ const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?jstDate():fmtSeed(c.seed);
+ const tw=`架空の言語でベタ謎解き！[${lab}] を ${t}（ランク${rk}）でクリアしました！`+(c.mode=='std'||c.mode=='seed'?`\nシード: ${sd}`:'')+'\n#架空言語ベタ謎解き';
+ $('#tm').textContent=t;$('#game').hidden=true;$('#kb').hidden=true;$('#res').hidden=false;
+ $('#res').innerHTML=`<div class="rc">${[...Array(26)].map(()=>`<i class="cf" style="left:${Math.random()*100}%;background:hsl(${Math.random()*360|0},80%,60%);animation-delay:${(Math.random()*2).toFixed(2)}s"></i>`).join('')}<div class="stamp">${rk}</div><div class="rl">${lab}</div><div class="rt">${t}</div><div class="rs">✗ ${miss}${best?`　🏆 ${best}`:''}</div>`+
+  `<div class="sd">${c.mode=='daily'?'DAILY':'SEED'}<b id="sdv">${sd}</b></div><div class="rb"><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(tw)}">POST</a>${c.mode=='daily'?'':'<button id="cpy">COPY SEED</button>'}<button id="go">↻ MENU</button></div></div>`}
+document.oninput=e=>{if(e.target.id!='seedin')return;SEEDIN=e.target.value.toUpperCase();saveCfg();const st=$('#seedst'),ev=$('#env');if(st){st.className='st';st.textContent=seedInfo()}if(ev)ev.className='env '+envColor()};
 document.onclick=e=>{
- if(e.target.closest('#env')){const v=$('#env');if(!v.classList.contains('open')){v.classList.add('open');setTimeout(start,800)}return}
- const lb=e.target.closest('[data-lb]'),fs=e.target.closest('[data-fs]'),ms=e.target.closest('[data-ms]');
- if(lb){const[r,c]=lb.dataset.lb.split(',').map(Number);sel={k:'b',r,c};return drawAns()}
- if(fs){sel={k:'f',i:+fs.dataset.fs};return drawAns()}
- if(ms){const[q,i]=ms.dataset.ms.split(',').map(Number);sel={k:'m',q,i};return drawAns()}
+ if(e.target.closest('#env'))return launch();
+ const fs=e.target.closest('[data-fs]');if(fs){if(!tEnd){fsel=+fs.dataset.fs;drawAns()}return}
  const b=e.target.closest('button');if(!b)return;
- if(b.dataset.d!==undefined){DIFF=+b.dataset.d;try{localStorage.setItem('kuuso_diff',DIFF)}catch(x){}return drawDif()}
- if(b.dataset.n!==undefined){NQ=+b.dataset.n;try{localStorage.setItem('kuuso_n',NQ)}catch(x){}return drawDif()}
- if(b.id=='go'){$('#env').classList.remove('open');$('#res').hidden=true;$('#start').hidden=false;$('#tm').textContent='00:00.0';return}
- if(b.dataset.t!==undefined){cur=+b.dataset.t;sel=cur==N?{k:'b',r:0,c:0}:cur==-2?{k:'m',q:0,i:0}:null;return render()}
+ if(b.dataset.mode){MODE=b.dataset.mode;saveCfg();return drawStart()}
+ if(b.dataset.d!==undefined){DIFF=+b.dataset.d;saveCfg();return drawStart()}
+ if(b.dataset.n!==undefined){NQ=+b.dataset.n;saveCfg();return drawStart()}
+ if(b.dataset.ty){const id=b.dataset.ty;if(ON[id]&&PUZ.filter(p=>ON[p.id]).length<2)return;ON[id]=!ON[id];saveCfg();return drawStart()}
+ if(b.id=='go'){$('#res').hidden=true;$('#game').hidden=true;$('#kb').hidden=true;$('#top').hidden=true;$('#start').hidden=false;tEnd=0;drawStart();return}
+ if(b.id=='cpy'){try{navigator.clipboard.writeText(fmtSeed(CONF.seed));b.textContent='COPIED!'}catch(x){}return}
+ if(tEnd)return;
+ if(b.dataset.t!==undefined){cur=+b.dataset.t;return render()}
  if(b.dataset.g!==undefined){put(+b.dataset.g);return drawAns()}
- if(b.id=='del'){if(cur>=0&&cur<N)inp[cur].pop();else if(sel)setv(sel,undefined);return drawAns()}
+ if(b.id=='del'){if(cur>=0&&cur<N)inp[cur].pop();else fin[fsel]=undefined;return drawAns()}
  if(b.id=='ok')check()};
+drawStart();
