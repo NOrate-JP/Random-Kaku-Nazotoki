@@ -162,22 +162,24 @@ function pickTypes(types,n){const a=shuf(types);if(n<=a.length)return a.slice(0,
 // ---- 設定・シード ----
 const B36='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',DN=['NORMAL','HARD','EXPERT'],RANKQ=[[50,80,120],[80,120,180],[120,180,270]];   // ランク境界: 1問あたり秒(S/A/B)。合計=これ×問題数+60秒
 const IMG=(n,hard)=>`images/rule-${n}${hard?'-hard':''}.png`,PENALTY=10,sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const normSeed=s=>(s||'').toUpperCase().replace(/[^0-9A-Z]/g,''),fmtSeed=s=>s.replace(/(.{4})(?=.)/g,'$1-'),rb=n=>{let s='';for(let i=0;i<n;i++)s+=B36[Math.random()*36|0];return s};
-// スタンダードのシード=12文字。先頭1文字(A〜I)に難易度と問題数を入れてあるので、シードだけで同じ設定・同じ問題になる。カスタムのシードはJ〜Z始まり(設定は含まない)
-const stdSeed=(d,n)=>B36[10+d*3+[3,5,7].indexOf(n)]+rb(11),cusSeed=()=>B36[19+(Math.random()*17|0)]+rb(11);
-const decodeStd=s=>{if(s.length!=12)return null;const i=s.charCodeAt(0)-65;return i>=0&&i<9?{diff:i/3|0,n:[3,5,7][i%3]}:null};
+const normSeed=s=>(s||'').toUpperCase().replace(/[^0-9A-Z+\-]/g,''),rb=n=>{let s='';for(let i=0;i<n;i++)s+=B36[Math.random()*36|0];return s};
+// シードは英数字(最大12文字ほど)ならどんな文字列でもOK(その文字列から同じ問題が作られる)。
+// 自動発行のシードは、通常は入らない「-」「+」を含む形にして、打ち込んだ文字列と区別する:
+//   スタンダード: 「H5-」+ランダム10文字 …先頭の N/H/E=難易度、3/5/7=問題数。シードだけで同じ設定・同じ問題になる
+//   カスタム: 「C+」+ランダム10文字 …設定は含まない。カスタムモードで同じ設定のまま入力すると同じ問題になる
+const stdSeed=(d,n)=>'NHE'[d]+n+'-'+rb(10),cusSeed=()=>'C+'+rb(10),parseStd=s=>{const m=/^([NHE])([357])[-+].+$/.exec(s);return m?{diff:'NHE'.indexOf(m[1]),n:+m[2]}:null};
 const jstDate=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
 const MODES=[['std','STANDARD','スタンダード'],['cus','CUSTOM','カスタム'],['seed','SEED','シード'],['daily','DAILY','デイリー']];
 let MODE='std',DIFF=1,NQ=5,ON={},SEEDIN='';PUZ.forEach(p=>ON[p.id]=true);
 try{const s=JSON.parse(localStorage.getItem('kuuso_cfg')||'{}');if(MODES.some(m=>m[0]==s.mode))MODE=s.mode;if(s.diff>=0&&s.diff<=2)DIFF=s.diff;if([3,5,7].includes(s.n))NQ=s.n;if(s.on)PUZ.forEach(p=>{if(p.id in s.on)ON[p.id]=!!s.on[p.id]});SEEDIN=s.seed||''}catch(e){}
 const saveCfg=()=>{try{localStorage.setItem('kuuso_cfg',JSON.stringify({mode:MODE,diff:DIFF,n:NQ,on:ON,seed:SEEDIN}))}catch(e){}};
-const envColor=()=>MODE=='daily'?'white':MODE=='cus'?'blue':MODE=='seed'?(()=>{const d=decodeStd(normSeed(SEEDIN));return d?['brown','red','black'][d.diff]:'brown'})():['brown','red','black'][DIFF];
-function seedInfo(){const s=normSeed(SEEDIN);if(!s)return MODE=='cus'?'空欄ならランダム':'';if(s.length!=12)return s.length+'/12';const d=decodeStd(s);return MODE=='seed'?(d?`✓ ${DN[d.diff]} ${d.n}Q`:'✗ スタンダード用のシードではありません'):'✓'}
+const envColor=()=>MODE=='daily'?'white':MODE=='cus'?'blue':['brown','red','black'][MODE=='seed'&&parseStd(normSeed(SEEDIN))?parseStd(normSeed(SEEDIN)).diff:DIFF];
+function seedInfo(){const s=normSeed(SEEDIN);if(!s)return MODE=='cus'?'空欄ならランダム':'';const d=parseStd(s);return MODE=='seed'?(d?`✓ ${DN[d.diff]} ${d.n}Q (シードに設定が含まれています)`:`✓ ${DN[DIFF]} ${NQ}Q で出題`):'✓'}
 function panel(){const df=`<div class="row2">${DN.map((n,i)=>`<button data-d="${i}" class="${i==DIFF?'on':''}">${n}</button>`).join('')}</div>`,nq=`<div class="row2">${[3,5,7].map(n=>`<button data-n="${n}" class="${n==NQ?'on':''}">${n}Q</button>`).join('')}</div>`,
- si=`<input id="seedin" maxlength="14" placeholder="XXXX-XXXX-XXXX" value="${SEEDIN}" autocomplete="off" spellcheck="false"><div id="seedst" class="st">${seedInfo()}</div>`;
+ si=`<input id="seedin" maxlength="16" placeholder="SEED" value="${SEEDIN}" autocomplete="off" spellcheck="false"><div id="seedst" class="st">${seedInfo()}</div>`;
  if(MODE=='std')return df+nq;
  if(MODE=='cus')return df+nq+`<div class="chips">${PUZ.map(p=>`<button data-ty="${p.id}" class="${ON[p.id]?'on':''}">${p.name}</button>`).join('')}</div>`+si;
- if(MODE=='seed')return si;
+ if(MODE=='seed')return si+df+nq+'<div class="st big2" style="font-size:12px">難易度・問題数は、シードに設定が含まれていないときに使われます</div>';
  return`<div class="st big2">HARD ・ 7Q ・ ${jstDate()}</div><div class="st">今日は全員が同じ問題です</div>`}
 function drawStart(){
  $('#start').innerHTML=`<div class="ttl"><div class="gl" id="ti"></div><h1>架空の言語で<br>ベタ謎解き！</h1></div><div class="modes">${MODES.map(([k,e,j])=>`<button data-mode="${k}" class="${k==MODE?'on':''}">${e}<small>${j}</small></button>`).join('')}</div>`+
@@ -187,10 +189,9 @@ function mkConf(){
  if(MODE=='std')return{mode:'std',diff:DIFF,n:NQ,types:PUZ,seed:stdSeed(DIFF,NQ)};
  if(MODE=='daily')return{mode:'daily',diff:1,n:7,types:PUZ,seed:'DAILY'+jstDate().replace(/-/g,'')};
  const s=normSeed(SEEDIN);
- if(MODE=='seed'){const d=decodeStd(s);return d?{mode:'seed',diff:d.diff,n:d.n,types:PUZ,seed:s}:{err:s.length!=12?'12文字のシードを入力してください':'スタンダード用のシードではありません'}}
+ if(MODE=='seed'){if(!s)return{err:'シードを入力してください'};const d=parseStd(s);return{mode:'seed',diff:d?d.diff:DIFF,n:d?d.n:NQ,types:PUZ,seed:s}}
  const types=PUZ.filter(p=>ON[p.id]);if(!types.length)return{err:'出題内容を1つ以上ONにしてください'};
- if(SEEDIN&&s.length!=12)return{err:'シードは12文字です(空欄ならランダム)'};
- return{mode:'cus',diff:DIFF,n:NQ,types,seed:s||cusSeed()}}
+  return{mode:'cus',diff:DIFF,n:NQ,types,seed:s||cusSeed()}}
 // ---- 最終問題の配置: 答えがどの行に入るか分からない。線=同じ文字が入る四角。答えが全部分かれば必ず1通りに決まる ----
 function nAss(L,A,lines,cap){const n=L.length,as=Array(n).fill(-1),used=Array(n).fill(false),by=L.map((_,r)=>lines.filter(l=>Math.max(l[0],l[2])==r)),sols=[];
  (function f(r){if(sols.length>=cap)return;if(r==n){sols.push(as.slice());return}
@@ -247,7 +248,7 @@ function render(){
  $('#tabs').innerHTML=tabs.map(i=>`<button data-t="${i}" class="${i==cur?'on':''}${i>=0&&i<N&&solved[i]?' ok':''}">${i==-1?'ITEM':i<N?'Q'+(i+1):'Last'}</button>`).join('');
  const badge=cur<N?'Q'+(cur+1):'Last';let P;
  if(cur==-1){P=[pp(tbl(k=>G(TBL[k],32)),11.2,{plain:1})];D.forEach((d,i)=>{if(d.item)P.push(pp(d.item,10.6,{raw:1,itemQ:i}))})}   // ITEM: 表 + 覆面算(HARD以上)の散らばった紙
- else if(cur<N){P=D[cur].papers.slice();if(GD<2)P.push(pp('<div id="ans"></div>',4.8))}
+ else if(cur<N){P=D[cur].papers.slice();if(GD<2)P.push(pp('<div id="ans"></div>',5.6))}
  else{P=[pp(`<div id="fl" style="width:calc(var(--u)*${LAY.LW.toFixed(2)});height:calc(var(--u)*${LAY.LH.toFixed(2)})"></div><div id="ans"></div>`,Math.max(LAY.LW,N*1.35)+.4,{img:'final',nosuf:1})];
   if(GD<2)P.push(pp('<div id="memo"></div>',6.4,{badge:'MEMO'}))}
  CW=Math.max(...P.map(p=>p.w));fit();$('#pz').className=cur>=0&&cur<N&&D[cur].stack?'stack':'';
@@ -280,7 +281,7 @@ function check(){if(tEnd)return;
   else{judge(false);shake(()=>{inp[cur]=[];drawAns()})}}}
 function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),c=CONF;let best='';
  try{const k=c.mode=='std'?`kuuso_best_${GD}_${N}`:c.mode=='daily'?'kuuso_daily_'+c.seed:null;if(k){const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}}catch(e){}
- const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?jstDate():fmtSeed(c.seed);
+ const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?jstDate():c.seed;
  const tw=`架空の言語でベタ謎解き！[${lab}] を ${t}（ランク${rk}）でクリアしました！`+(c.mode=='std'||c.mode=='seed'?`\nシード: ${sd}`:'')+'\n#架空言語ベタ謎解き';
  $('#tm').textContent=t;$('#game').hidden=true;$('#kb').hidden=true;$('#res').hidden=false;
  $('#res').innerHTML=`<div class="rc">${[...Array(26)].map(()=>`<i class="cf" style="left:${Math.random()*100}%;background:hsl(${Math.random()*360|0},80%,60%);animation-delay:${(Math.random()*2).toFixed(2)}s"></i>`).join('')}<div class="stamp">${rk}</div><div class="rl">${lab}</div><div class="rt">${t}</div><div class="rs">✗ ${miss}${best?`　🏆 ${best}`:''}</div>`+
@@ -295,7 +296,7 @@ document.onclick=e=>{
  if(b.dataset.n!==undefined){NQ=+b.dataset.n;saveCfg();return drawStart()}
  if(b.dataset.ty){const id=b.dataset.ty;if(ON[id]&&PUZ.filter(p=>ON[p.id]).length<2)return;ON[id]=!ON[id];saveCfg();return drawStart()}
  if(b.id=='go'){$('#res').hidden=true;$('#game').hidden=true;$('#kb').hidden=true;$('#top').hidden=true;$('#start').hidden=false;tEnd=0;drawStart();return}
- if(b.id=='cpy'){try{navigator.clipboard.writeText(fmtSeed(CONF.seed));b.textContent='COPIED!'}catch(x){}return}
+ if(b.id=='cpy'){try{navigator.clipboard.writeText(CONF.seed);b.textContent='COPIED!'}catch(x){}return}
  if(tEnd)return;
  if(b.dataset.t!==undefined){cur=+b.dataset.t;return render()}
  if(b.dataset.g!==undefined){put(+b.dataset.g);return drawAns()}
