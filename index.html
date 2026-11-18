@@ -1,6 +1,7 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-<title>架空の言語でベタ謎解き！</title>
+<title>異世界謎解きRTA</title>
+<link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png">
 <style>
 :root{--u:36px;--ks:52px}
 [hidden]{display:none!important}
@@ -9,7 +10,7 @@ background:radial-gradient(ellipse at 50% -10%,#fff 0,#fff0 62%),repeating-linea
 .wrap{max-width:1160px;margin:auto}
 button{font:inherit;background:#fbf7ec;color:#222;border:1px solid #b9a98a;border-radius:8px;padding:6px 10px;margin:2px;cursor:pointer;box-shadow:0 2px 0 #b9a98a}
 button.on{background:#ffe48a;border-color:#8a6d2f}button:disabled{opacity:.4}
-#top{display:flex;justify-content:space-between;align-items:center;border:3px solid #8d8d8d;background:linear-gradient(#f6f6f6,#cfcfcf);border-radius:40px;padding:6px 18px;box-shadow:0 3px 8px #0003;font-weight:700}
+#top{display:flex;justify-content:space-between;align-items:center;gap:10px;border:3px solid #8d8d8d;background:linear-gradient(#f6f6f6,#cfcfcf);border-radius:40px;padding:6px 18px;box-shadow:0 3px 8px #0003;font-weight:700}
 #tm{font-family:monospace;font-size:24px;color:#2a2018}#pn{color:#f55;margin-right:10px;opacity:0}#pn.f{animation:pn 1s}@keyframes pn{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-14px)}}
 /* スタート画面 */
 #start{text-align:center;padding-bottom:30px}
@@ -100,10 +101,32 @@ a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-deco
 .cf{position:absolute;top:-12px;width:9px;height:14px;opacity:.9;animation:cf 2.6s linear infinite}@keyframes cf{to{transform:translateY(560px) rotate(720deg)}}
 body::after{content:"";position:fixed;right:-40px;top:170px;z-index:-1;width:190px;height:14px;transform:rotate(-24deg);border-radius:3px 7px 7px 3px;pointer-events:none;
 background:linear-gradient(90deg,#d4e0e8 0 6%,#c96 6% 12%,#e8b923 12% 82%,#e9c9a0 82% 93%,#333 93%);box-shadow:2px 4px 6px #0004}
+#top .tb{margin:0;padding:6px 14px;font-weight:700;border-radius:999px;white-space:nowrap}#top .tb.ham{font-size:20px;line-height:1;padding:5px 13px}
+#dn{flex:1;text-align:center;font-size:13px;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo{display:block;margin:6px auto;max-width:min(560px,92%);height:auto}
+#mn{position:fixed;inset:0;z-index:55}.mbg{position:absolute;inset:0;background:#0004}
+#mn .mp{position:absolute;left:12px;top:64px;background:#fffdf5;border-radius:12px;box-shadow:0 10px 30px #0006;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:250px}
+#mn .mp button{text-align:left;padding:12px 14px;font-weight:700;margin:0}
+#rl{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px}#rl .mbg{background:#000a}
+#rl .rcard{position:relative;background:#fffdf5;border-radius:14px;max-width:580px;width:100%;max-height:86vh;overflow:auto;padding:20px 22px;box-shadow:0 18px 50px #0006;line-height:1.7}
+#rl h2{margin:0 0 8px}#rl h3{margin:16px 0 4px;border-left:5px solid #c0392b;padding-left:8px}#rl ul{padding-left:20px;margin:4px 0}#rl #rlx{display:block;margin:16px auto 0;padding:8px 26px;font-weight:700}
+/* 答え(ギブアップ時) */
+.bd b,.cw b,.pc b,.t td{position:relative}.bd b.hl,.cw b.hl,.t td.hl{background:#ffe9a8}
+.arow{display:flex;gap:calc(var(--u)*.3);margin:6px 0 10px;flex-wrap:wrap}.ai{display:flex;flex-direction:column;align-items:center}.ai small{font-size:11px;color:#c22}
+.solc{position:relative;background:#ffe9a8;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.dim{opacity:.18;display:inline-block}.hl2{position:relative;display:inline-block;background:#ffe9a8;border-radius:6px;padding:2px}
+.rq{position:absolute;font-weight:900;font-size:calc(var(--u)*.42);color:#fff;background:#000;padding:0 6px;border-radius:4px;line-height:1.5;white-space:nowrap}
+/* 各紙への書き込みメモ */
+.dv{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}#pz.pen .dv{pointer-events:auto;touch-action:none;cursor:crosshair}#pz.pen{-webkit-user-select:none;user-select:none}
+.cut{position:relative}#ans{position:relative;z-index:3}
+#pen{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center;margin:10px auto 0;padding:6px 8px;background:#fffdf5;border:1px solid #e0d9c4;border-radius:12px;box-shadow:0 3px 8px #0002;width:fit-content;max-width:100%}
+#pen button{margin:0;padding:6px 10px;font-weight:700}#pen .cl{width:32px;height:32px;padding:0;background:var(--c);border-radius:50%;border-color:#0004}#pen .cl.on{outline:3px solid #ffb300;outline-offset:1px}
 </style></head><body><div class="wrap">
-<div id="top" hidden><b id="dn"></b><span><b id="pn"></b><span id="tm">00:00.0</span></span></div>
+<div id="top"><button id="tbtn" class="tb">ルール</button><b id="dn"></b><span><b id="pn"></b><span id="tm"></span></span></div>
 <div id="start"></div>
-<div id="game" hidden><div id="tabs"></div><div id="pz"></div><div id="kb"></div></div>
+<div id="game" hidden><div id="tabs"></div><div id="pen" hidden><button data-pen="tg">✎ ペン</button><button data-pen="c0" class="cl" style="--c:#222" aria-label="黒"></button><button data-pen="c1" class="cl" style="--c:#d22" aria-label="赤"></button><button data-pen="c2" class="cl" style="--c:#26c" aria-label="青"></button><button data-pen="er">消しゴム</button><button data-pen="un">↶ 戻す</button><button data-pen="ck" id="pck">全消去</button></div><div id="pz"></div><div id="kb"></div></div>
 </div>
+<div id="mn" hidden><div class="mbg" data-close="menu"></div><div class="mp"><button id="mg">ギブアップ（答えを見る）</button><button id="mt">タイトルに戻る</button><button id="mc">メニューを閉じる</button></div></div>
+<div id="rl" hidden><div class="mbg" data-close="rules"></div><div class="rcard"><div id="rlc"></div><button id="rlx">閉じる</button></div></div>
 <div id="cdn" hidden></div><div id="jg" hidden></div><div id="res" hidden></div>
-<script src="parts.js?v=16"></script><script src="game.js?v=16"></script></body></html>
+<script src="rules.js?v=18"></script><script src="parts.js?v=18"></script><script src="game.js?v=18"></script></body></html>

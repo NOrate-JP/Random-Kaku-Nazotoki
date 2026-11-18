@@ -45,6 +45,7 @@ function gGojuon(n,hard){const o={};let c1=0,c2=0,x1=0,x2=0,rot=[],ordp=[],jit=[
  o.ans=cl.map(k=>TBL[k]);o.papers=build();
  o.adj=(p,val)=>{const k=TBL.indexOf(val);if(k<0||!okCell(k)||(cl.includes(k)&&cl[p]!=k))return false;cl[p]=k;o.ans[p]=val;if(o.raw)o.raw[p]=val;o.papers=build();return true};   // 最終問題の都合で印の位置を動かす
  o.reset=()=>{cl=init.slice();o.ans=cl.map(k=>TBL[k]);o.papers=build()};
+ o.solw=11.2;o.sol=()=>tbl(k=>cl.includes(k)?`<div class="solc">${G(TBL[k],28)}<small class="mn">${CIR[cl.indexOf(k)]}</small></div>`:G(TBL[k],26));   // ギブアップ時: 表の印の文字
  return o}
 // ---- スケルトン: 盤面は毎回ランダム生成(ヘビ型除外)。カギは別紙。ハードは余りのカギ2つ(1文字違いの偽物)。解は必ず1通り ----
 function cnt(S,W){let n=0;const g={};(function f(i,u){if(i==S.length){n++;return}
@@ -76,7 +77,8 @@ function gSkeleton(n,hard){let S,H,C,mp,W,A,ks;
   if(ok)break}
  const st=shuf(ks).slice(0,n);let b=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;
  for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c;b+=mp[k]===undefined?'<i></i>':`<b>${st.includes(k)?CIR[st.indexOf(k)]:''}</b>`}
- return{ans:st.map(k=>mp[k]),papers:[pp(b+'</div>',C+.4,{img:'skeleton'}),pp(`<div class="wl">${shuf(A).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,6.6)]}}
+ let sb=`<div class="bd" style="grid-template-columns:repeat(${C},var(--u))">`;for(let r=0;r<H;r++)for(let c=0;c<C;c++){const k=r+','+c,s=st.indexOf(k);sb+=mp[k]===undefined?'<i></i>':`<b class="${s<0?'':'hl'}">${G(mp[k],30)}${s<0?'':`<small class="mn">${CIR[s]}</small>`}</b>`}sb+='</div>';
+ return{ans:st.map(k=>mp[k]),sol:sb,solw:C+.4,papers:[pp(b+'</div>',C+.4,{img:'skeleton'}),pp(`<div class="wl">${shuf(A).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,6.6)]}}
 // ---- しりとり: 単語は紙に散らす。つなぎ表(□□□▶□□□▶…)に番号。ハードは余りの単語2つ。つなぎ方は必ず1通り ----
 const chains=(ws,K)=>{let c=0;const f=(l,u,d)=>{if(c>1)return;if(d==K){c++;return}for(let i=0;i<ws.length;i++)if(!(u>>i&1)&&(l<0||ws[l][2]==ws[i][0]))f(i,u|1<<i,d+1)};f(-1,0,0);return c};
 function gShiritori(n,hard){let W,A;
@@ -88,18 +90,23 @@ function gShiritori(n,hard){let W,A;
  const cl=shuf([...Array(18).keys()]).slice(0,n),cell=(k,m)=>{const x=cl.indexOf(k*3+m);return`<b>${x<0?'':CIR[x]}</b>`};
  let ch='<div class="chain">';for(let k=0;k<6;k+=2)ch+=`<div class="cr"><span class="cw">${cell(k,0)}${cell(k,1)}${cell(k,2)}</span><span class="ar">▶</span><span class="cw">${cell(k+1,0)}${cell(k+1,1)}${cell(k+1,2)}</span>${k<4?'<span class="ar">▶</span>':''}</div>`;
  const Hh=hard?8.8:7.2,Aw=shuf(A),P=scatter(Aw.map(()=>[3.2,1.25]),9.5,Hh,.3);
- return{ans:cl.map(i=>W[i/3|0][i%3]),papers:[pp(`<div class="sc" style="height:calc(var(--u)*${Hh})">${Aw.map((w,i)=>at(P[i],R(11)-5,row(w))).join('')}</div>`,9.6,{img:'shiritori'}),pp(ch+'</div>',7.8)]}}
+ const cs=(k,m)=>{const x=cl.indexOf(k*3+m);return`<b class="${x<0?'':'hl'}">${G(W[k][m],28)}${x<0?'':`<small class="mn">${CIR[x]}</small>`}</b>`};
+ let sc='<div class="chain">';for(let k=0;k<6;k+=2)sc+=`<div class="cr"><span class="cw">${cs(k,0)}${cs(k,1)}${cs(k,2)}</span><span class="ar">▶</span><span class="cw">${cs(k+1,0)}${cs(k+1,1)}${cs(k+1,2)}</span>${k<4?'<span class="ar">▶</span>':''}</div>`;sc+='</div>';
+ return{ans:cl.map(i=>W[i/3|0][i%3]),sol:sc,solw:7.8,papers:[pp(`<div class="sc" style="height:calc(var(--u)*${Hh})">${Aw.map((w,i)=>at(P[i],R(11)-5,row(w))).join('')}</div>`,9.6,{img:'shiritori'}),pp(ch+'</div>',7.8)]}}
 // ---- ババ抜き: 紙のあちこちに散らばった文字。同じ文字のペアを消して左から読む(ハードはペア増) ----
 function gBaba(n,hard){const pairs=hard?8:6,ids=pick(pairs+n),sg=ids.slice(pairs);let a=[];for(let i=0;i<pairs;i++)a.push(ids[i],ids[i]);a.push(...sg);a=shuf(a);
  const H=hard?8.2:7.4,P=scatter(a.map(()=>[1.15,1.15]),9.5,H,.3,(i,x,Q)=>!sg.includes(a[i])||Q.every((q,j)=>!sg.includes(a[j])||Math.abs(q[0]-x)>=1));
  const ans=a.map((g,i)=>[g,P[i][0]]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[0]);
- return{ans,papers:[pp(`<div class="sc" style="height:calc(var(--u)*${H})">${a.map((g,i)=>at(P[i],R(31)-15,G(g,40))).join('')}</div>`,9.6,{img:'baba'})]}}
+ const od=a.map((g,i)=>[g,P[i][0],i]).filter(u=>sg.includes(u[0])).sort((u,v)=>u[1]-v[1]).map(u=>u[2]);
+ const bs=`<div class="sc" style="height:calc(var(--u)*${H})">${a.map((g,i)=>{const o=od.indexOf(i);return at(P[i],0,o<0?`<span class="dim">${G(g,40)}</span>`:`<span class="hl2">${G(g,40)}<small class="mn">${CIR[o]}</small></span>`)}).join('')}</div>`;
+ return{ans,sol:bs,solw:9.6,papers:[pp(`<div class="sc" style="height:calc(var(--u)*${H})">${a.map((g,i)=>at(P[i],R(31)-15,G(g,40))).join('')}</div>`,9.6,{img:'baba'})]}}
 // ---- 覆面算: 対応表を見て計算。HARD以上は対応表の紙がITEM欄にバラバラに散らばる ----
 function gFukumen(n,hard){const m=pick(10),Q=n==3?[123,377,100,400]:n==4?[500,400,500,400]:[5000,4000,5000,4000],x=R(Q[1])+Q[0],y=R(Q[3])+Q[2],num=v=>String(v).split('').map(d=>m[+d]);
  const eq=pp(`<div class="ex">${row(num(x))} + ${row(num(y))} = ?</div>`,10.4);
- if(!hard)return{ans:num(x+y),stack:true,papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(g=>`<td>${G(g,30)}</td>`).join('')+'</tr></table>'].map(t=>pp(t,10.4)).concat([eq])};
+ const fsol=`<div class="ex">${x} + ${y} = ${x+y}</div><table class="t" style="margin-top:8px"><tr>${m.map((_,d)=>`<th>${d}</th>`).join('')}</tr><tr>${m.map(g=>`<td>${G(g,30)}</td>`).join('')}</tr></table>`;
+ if(!hard)return{ans:num(x+y),stack:true,sol:fsol,solw:10.4,papers:['<table class="t"><tr>'+m.map((_,d)=>`<th>${d}</th>`).join('')+'</tr><tr>'+m.map(g=>`<td>${G(g,30)}</td>`).join('')+'</tr></table>'].map(t=>pp(t,10.4)).concat([eq])};
  const P=scatter(m.map(()=>[2.5,1.3]),10.6,7.4,.3);
- return{ans:num(x+y),stack:true,papers:[eq],item:`<div class="sc itx" style="width:calc(var(--u)*10.6);height:calc(var(--u)*7.4)">${m.map((g,d)=>at(P[d],R(31)-15,`<div class="cd2">${d}=${G(g,34)}</div>`)).join('')}</div>`}}
+ return{ans:num(x+y),stack:true,sol:fsol,solw:10.4,papers:[eq],item:`<div class="sc itx" style="width:calc(var(--u)*10.6);height:calc(var(--u)*7.4)">${m.map((g,d)=>at(P[d],R(31)-15,`<div class="cd2">${d}=${G(g,34)}</div>`)).join('')}</div>`}}
 // ---- ポリオミノ: ピースは回転・反転なし。ハードは余りのピース2つ。解は必ず1通り ----
 const norm=cs=>{const mr=Math.min(...cs.map(p=>p[0])),mc=Math.min(...cs.map(p=>p[1]));return cs.map(p=>[p[0]-mr,p[1]-mc]).sort((a,b)=>a[0]-b[0]||a[1]-b[1])};
 const orients=cs=>{const s=new Map();let p=cs;for(let f=0;f<2;f++){for(let r=0;r<4;r++){p=p.map(([a,b])=>[b,-a]);const q=norm(p);s.set(q+'',q)}p=p.map(([a,b])=>[a,-b])}return[...s.values()]};
@@ -134,7 +141,9 @@ function gPoly(n,hard){const{P,h,w,mask,dec}=mkP(hard),cells=[];mask.forEach((v,
  const pcs=P.map(p=>p.map(([r,c])=>[r,c,gl[r*w+c]])).concat(dec.map((p,j)=>p.map(([r,c],i)=>[r,c,ids[cells.length+j*5+i]])));
  const html=pcs.map((q0,k)=>{const q=tf(q0,0,0),H=Math.max(...q.map(c=>c[0]))+1,W=Math.max(...q.map(c=>c[1]))+1;let s=`<div class="pc" style="grid-template-columns:repeat(${W},var(--u))">`;
   for(let r=0;r<H;r++)for(let c=0;c<W;c++){const z=q.find(e=>e[0]==r&&e[1]==c);s+=z?`<b style="background:hsl(${k*47%360},65%,86%)">${G(z[2],30)}</b>`:'<i></i>'}return s+'</div>'});
- return{ans:st.map(i=>gl[i]),tries:0,papers:[pp(b,7.4,{img:'polyomino'}),pp(`<div class="pcs">${shuf(html).join('')}</div>`,7.4)]}}
+ const own=[];P.forEach((p,k)=>p.forEach(([r,c])=>own[r*w+c]=k));
+ const sb=`<div class="bd" style="grid-template-columns:repeat(${w},var(--u))">`+[...Array(h*w).keys()].map(i=>{if(mask[i])return'<i></i>';const s=st.indexOf(i);return`<b style="background:hsl(${own[i]*47%360},65%,86%)">${G(gl[i],30)}${s<0?'':`<small class="mn">${CIR[s]}</small>`}</b>`}).join('')+'</div>';
+ return{ans:st.map(i=>gl[i]),sol:sb,solw:7.4,tries:0,papers:[pp(b,7.4,{img:'polyomino'}),pp(`<div class="pcs">${shuf(html).join('')}</div>`,7.4)]}}
 // ---- シークワーズ: 盤面からカギの単語(縦横斜め・逆向きも)を探して消し、残った文字をZ字(左→右・上→下)に読む。盤面には同じ文字をわざと散りばめる ----
 const DIRS=[[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
 function wsOcc(g,H,W,w){const s=new Set();for(let r=0;r<H;r++)for(let c=0;c<W;c++)for(const[dr,dc]of DIRS){const cs=[];let ok=1;
@@ -154,7 +163,9 @@ function gWordsearch(n,hard){
    const dec=[];if(hard){for(let k=0;k<60&&dec.length<1;k++){const d=words[R(words.length)].slice();d[R(d.length)]=ids[R(ids.length)];
      if(!words.some(w=>w+''==d+'')&&!dec.some(w=>w+''==d+'')&&wsOcc(g,H,W,d)==0)dec.push(d)}if(dec.length<1)continue}   // ハード: 盤面にない偽のカギ1つ
    const tb='<table class="t">'+[...Array(H).keys()].map(r=>'<tr>'+[...Array(W).keys()].map(c=>`<td>${G(g[r*W+c],32)}</td>`).join('')+'</tr>').join('')+'</table>';
-   return{ans:rem.map(k=>g[k]),dbg:{g,H,W,words,dec,rem},papers:[pp(tb,W+.4,{img:'wordsearch'}),pp(`<div class="wl">${shuf(words.concat(dec)).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,5.6)]}}}}
+   const col={};segs.forEach((s,i)=>s.forEach(k=>{if(col[k]===undefined)col[k]=i}));
+   const ws2='<table class="t">'+[...Array(H).keys()].map(r=>'<tr>'+[...Array(W).keys()].map(c=>{const k=r*W+c,x=rem.indexOf(k);return x>=0?`<td class="hl">${G(g[k],30)}<small class="mn">${CIR[x]}</small></td>`:`<td style="background:hsl(${col[k]*47%360},60%,88%)">${G(g[k],30)}</td>`}).join('')+'</tr>').join('')+'</table><div class="wl" style="margin-top:8px">'+words.map((w,i)=>`<div><span style="background:hsl(${i*47%360},60%,88%);display:inline-block;padding:2px 4px;border-radius:4px">${row(w)}</span></div>`).join('')+'</div>';
+   return{ans:rem.map(k=>g[k]),sol:ws2,solw:Math.max(W+.4,5.6),dbg:{g,H,W,words,dec,rem},papers:[pp(tb,W+.4,{img:'wordsearch'}),pp(`<div class="wl">${shuf(words.concat(dec)).map(w=>`<div>${row(w)}</div>`).join('')}</div>`,5.6)]}}}}
 // ---- 謎の登録(ここに足すと出題対象になる) ----
 const PUZ=[{id:'gojuon',name:'五十音表',gen:gGojuon},{id:'fukumen',name:'覆面算',gen:gFukumen},{id:'shiritori',name:'しりとり',gen:gShiritori},{id:'baba',name:'ババ抜き',gen:gBaba},
  {id:'skeleton',name:'スケルトン',gen:gSkeleton},{id:'polyomino',name:'ポリオミノ',gen:gPoly},{id:'wordsearch',name:'シークワーズ',gen:gWordsearch}];
@@ -168,6 +179,7 @@ const normSeed=s=>(s||'').toUpperCase().replace(/[^0-9A-Z+\-]/g,''),rb=n=>{let s
 //   スタンダード: 「H5-」+ランダム10文字 …先頭の N/H/E=難易度、3/5/7=問題数。シードだけで同じ設定・同じ問題になる
 //   カスタム: 「C+」+ランダム10文字 …設定は含まない。カスタムモードで同じ設定のまま入力すると同じ問題になる
 const stdSeed=(d,n)=>'NHE'[d]+n+'-'+rb(10),cusSeed=()=>'C+'+rb(10),parseStd=s=>{const m=/^([NHE])([357])[-+].+$/.exec(s);return m?{diff:'NHE'.indexOf(m[1]),n:+m[2]}:null};
+const seedKey=c=>`${c.mode=='cus'?'C':c.mode=='daily'?'D':'S'}|${c.seed}|${c.diff}|${c.n}|${c.types.map(t=>t.id).join(',')}`;   // 同じシードでも、モード系統・難易度・問題数・出題内容が違えば別の問題になる
 const jstDate=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
 const MODES=[['std','STANDARD','スタンダード'],['cus','CUSTOM','カスタム'],['seed','SEED','シード'],['daily','DAILY','デイリー']];
 let MODE='std',DIFF=1,NQ=5,ON={},SEEDIN='';PUZ.forEach(p=>ON[p.id]=true);
@@ -181,9 +193,11 @@ function panel(){const df=`<div class="row2">${DN.map((n,i)=>`<button data-d="${
  if(MODE=='cus')return df+nq+`<div class="chips">${PUZ.map(p=>`<button data-ty="${p.id}" class="${ON[p.id]?'on':''}">${p.name}</button>`).join('')}</div>`+si;
  if(MODE=='seed')return si+df+nq+'<div class="st big2" style="font-size:12px">難易度・問題数は、シードに設定が含まれていないときに使われます</div>';
  return`<div class="st big2">HARD ・ 7Q ・ ${jstDate()}</div><div class="st">今日は全員が同じ問題です</div>`}
-function drawStart(){
- $('#start').innerHTML=`<div class="ttl"><div class="gl" id="ti"></div><h1>架空の言語で<br>ベタ謎解き！</h1></div><div class="modes">${MODES.map(([k,e,j])=>`<button data-mode="${k}" class="${k==MODE?'on':''}">${e}<small>${j}</small></button>`).join('')}</div>`+
-  `<div class="env ${envColor()}" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><small>▶ TAP TO OPEN</small></div></div><div class="panel">${panel()}</div>`;
+function setBar(){$('#tbtn').textContent=INGAME?'☰':'ルール';$('#tbtn').className=INGAME?'tb ham':'tb';
+ if(!INGAME){const m=MODES.find(x=>x[0]==MODE)[1];$('#dn').textContent=MODE=='daily'?m+' ・ HARD 7Q':MODE=='seed'?m:`${m} ・ ${DN[DIFF]} ${NQ}Q`;$('#tm').textContent='';$('#pn').textContent=''}}
+function drawStart(){setBar();
+ $('#start').innerHTML=`<div class="ttl"><div class="gl" id="ti"></div><img class="logo" src="images/logo.png" alt="異世界謎解きRTA" onerror="this.replaceWith(Object.assign(document.createElement('h1'),{textContent:this.alt}))"></div><div class="modes">${MODES.map(([k,e,j])=>`<button data-mode="${k}" class="${k==MODE?'on':''}">${e}<small>${j}</small></button>`).join('')}</div>`+
+  `<div class="panel">${panel()}</div><div class="env ${envColor()}" id="env"><div class="bodyx"></div><div class="flap"></div><div class="lab"><small>TAP TO START</small></div></div>`;
  PARTS_READY.then(()=>{const t=$('#ti');if(t)t.innerHTML=[5,58,19,177,33,102,64].map(i=>GR(i,34)).join('')})}
 function mkConf(){
  if(MODE=='std')return{mode:'std',diff:DIFF,n:NQ,types:PUZ,seed:stdSeed(DIFF,NQ)};
@@ -225,44 +239,50 @@ function looseLayout(){const n=D.length,ord=shuf([...Array(n).keys()]),A=D.map(d
  for(let r=0;r<n-1;r++)for(let c=0;c<L[r];c++)for(let c2=0;c2<L[r+1];c2++)if(A[ord[r]][c]===A[ord[r+1]][c2])all.push([r,c,r+1,c2]);
  setLay(ord,L,all,D.map(()=>[...Array(200).keys()]),A)}
 // ---- 進行 ----
-let CONF,GD=1,D,N,LAY,FANS,cur,fin,fsel,memo,inp,solved,CW,t0,tEnd=0,pen=0,miss=0;
+let CURU=36,CONF,GD=1,D,N,LAY,FANS,cur,fin,fsel,memo,inp,solved,CW,t0,tEnd=0,pen=0,miss=0,INGAME=false,GAVE=false,armG=false,armT=false;
 async function countdown(){const c=$('#cdn');c.hidden=false;for(const t of['3','2','1','START!']){c.innerHTML=`<div class="cn">${t}</div>`;await sleep(t=='START!'?650:760)}c.hidden=true}
 function judge(ok){const j=$('#jg');j.hidden=false;j.innerHTML=`<div class="jo ${ok?'ok':'ng'}"></div>`;setTimeout(()=>{j.hidden=true},950)}
-async function begin(c){CONF=c;GD=c.diff;N=c.n;await PARTS_READY;
- rnd=seededRnd(c.seed);mkTable();let ok=0;
+async function begin(c){CONF=c;GD=c.diff;N=c.n;GAVE=false;await PARTS_READY;
+ rnd=seededRnd(seedKey(c));mkTable();let ok=0;
  for(let t=0;t<300&&!ok;t++){D=pickTypes(c.types,N).map(p=>{const x=p.gen(3+R(2),GD>=1);return Object.assign(x,{id:p.id,raw:x.ans.slice(),map:[...Array(200).keys()]})});ok=mkLayout()}
  if(!ok)looseLayout();
  rnd=Math.random;
+ Object.keys(DRAW).forEach(k=>delete DRAW[k]);HIST=[];INK.on=false;INK.er=false;
  fin=Array(N).fill();fsel=0;memo=D.map(d=>Array(d.ans.length).fill());inp=D.map(()=>[]);solved=D.map(()=>false);cur=0;tEnd=0;pen=0;miss=0;
- $('#dn').textContent=DN[GD]+' '+N+'Q'+(c.mode=='daily'?' DAILY':'');$('#tm').textContent='00:00.0';$('#start').hidden=true;$('#top').hidden=false;
- await countdown();$('#game').hidden=false;t0=performance.now();render();tick()}
+ $('#dn').textContent=DN[GD]+' '+N+'Q'+(c.mode=='daily'?' ・ DAILY':'');$('#tm').textContent='00:00.0';$('#start').hidden=true;
+ await countdown();INGAME=true;setBar();$('#dn').textContent=DN[GD]+' '+N+'Q'+(c.mode=='daily'?' ・ DAILY':'');$('#tm').textContent='00:00.0';
+ $('#game').hidden=false;t0=performance.now();render();tick()}
 async function launch(){const v=$('#env');if(!v||v.classList.contains('open'))return;
  const c=mkConf();if(c.err){const st=$('#seedst');if(st){st.textContent=c.err;st.classList.add('bad')}else alert(c.err);v.classList.add('shk');setTimeout(()=>v.classList.remove('shk'),450);return}
  saveCfg();v.classList.add('open');await sleep(750);await begin(c)}
 function tick(){if(tEnd)return;$('#tm').textContent=fmt(performance.now()-t0+pen*1000);requestAnimationFrame(tick)}
-function fit(){$('#pz').style.setProperty('--u',Math.min(36,(document.documentElement.clientWidth-48)/CW)+'px')}
-window.onresize=()=>{if(D)fit()};
-const kbOn=()=>cur==N||(GD<2&&cur>=0&&cur<N&&!solved[cur]);
+function fit(){CURU=Math.min(36,(document.documentElement.clientWidth-48)/CW);$('#pz').style.setProperty('--u',CURU+'px')}
+window.onresize=()=>{if(D){fit();syncDraw()}};
+const kbOn=()=>!GAVE&&(cur==N||(GD<2&&cur>=0&&cur<N&&!solved[cur]));
+const ansRow=raw=>`<div class="arow">${raw.map((g,i)=>`<span class="ai"><small>${CIR[i]}</small>${G(g,36)}</span>`).join('')}</div>`;
 function render(){
  const tabs=[-1,...[...Array(N).keys()],N];$('#tabs').style.setProperty('--tn',tabs.length);
  $('#tabs').innerHTML=tabs.map(i=>`<button data-t="${i}" class="${i==cur?'on':''}${i>=0&&i<N&&solved[i]?' ok':''}">${i==-1?'ITEM':i<N?'Q'+(i+1):'Last'}</button>`).join('');
  const badge=cur<N?'Q'+(cur+1):'Last';let P;
  if(cur==-1){P=[pp(tbl(k=>G(TBL[k],32)),11.2,{plain:1})];D.forEach((d,i)=>{if(d.item)P.push(pp(d.item,10.6,{raw:1,itemQ:i}))})}   // ITEM: 表 + 覆面算(HARD以上)の散らばった紙
- else if(cur<N){P=D[cur].papers.slice();if(GD<2)P.push(pp('<div id="ans"></div>',5.6))}
- else{P=[pp(`<div id="fl" style="width:calc(var(--u)*${LAY.LW.toFixed(2)});height:calc(var(--u)*${LAY.LH.toFixed(2)})"></div><div id="ans"></div>`,Math.max(LAY.LW,N*1.35)+.4,{img:'final',nosuf:1})];
-  if(GD<2)P.push(pp('<div id="memo"></div>',6.4,{badge:'MEMO'}))}
+ else if(cur<N){P=D[cur].papers.slice();
+  if(GAVE){const d=D[cur],s=typeof d.sol=='function'?d.sol():d.sol;P.push(pp(ansRow(d.raw)+(s||''),Math.max(d.solw||6,N>0?4.6:0),{badge:'ANSWER'}))}   // ギブアップ: 答えと盤面の埋め方
+  else if(GD<2)P.push(pp('<div id="ans"></div>',5.6))}
+ else{P=[pp(`<div id="fl" style="width:calc(var(--u)*${LAY.LW.toFixed(2)});height:calc(var(--u)*${LAY.LH.toFixed(2)})"></div><div id="ans"></div>`,Math.max(LAY.LW+(GAVE?1.3:0),N*1.35)+.4,{img:'final',nosuf:1})];
+  if(GD<2||GAVE)P.push(pp('<div id="memo"></div>',6.4,{badge:'MEMO'}))}
  CW=Math.max(...P.map(p=>p.w));fit();$('#pz').className=cur>=0&&cur<N&&D[cur].stack?'stack':'';
  $('#pz').innerHTML=P.map(p=>{const m=p.itemQ!==undefined?D[p.itemQ].map:cur>=0&&cur<N?D[cur].map:null,bd=p.itemQ!==undefined?'Q'+(p.itemQ+1):p.badge||badge,h=fx(p.h,m).replace(/⟦Q⟧/g,bd);
   return p.raw?`<div class="cutwrap">${p.itemQ!==undefined?`<div class="qn">${bd}</div>`:''}${h}</div>`:`<div class="paper${p.plain?' noclip':''}" style="--pw:${p.w}${p.plain?';padding-top:12px':''}">${p.plain?'':`<div class="qn">${bd}</div>`}${p.img?`<img class="rule" src="${IMG(p.img,GD>=1&&!p.nosuf)}" data-n="rule-${p.img}${GD>=1&&!p.nosuf?'-hard':''}.png" alt="">`:''}${h}</div>`}).join('');
  document.querySelectorAll('.rule').forEach(i=>i.onerror=()=>{const d=document.createElement('div');d.className='ph';d.textContent=i.dataset.n;i.replaceWith(d)});
- $('#kb').hidden=!kbOn();drawAns();if(kbOn())drawKb()}
+ $('#kb').hidden=!kbOn();drawAns();if(kbOn())drawKb();attachDraw();penUI()}
 const slot=(v,cls,at)=>`<div class="sl${cls||''}"${at||''}>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`;
 function drawAns(){
- if(cur==N){const o=LAY.off,u=(r,c)=>[o[r]+c*1.2,r*2.1];
+ if(cur==N){const o=LAY.off,u=(r,c)=>[o[r]+c*1.2,r*2.1],A=D.map(d=>d.ans);
   $('#fl').innerHTML=`<svg class="ln" viewBox="0 0 ${LAY.LW.toFixed(2)} ${LAY.LH.toFixed(2)}" preserveAspectRatio="none">${LAY.lines.map(([r1,c1,r2,c2])=>`<line x1="${(u(r1,c1)[0]+.5).toFixed(2)}" y1="${(u(r1,c1)[1]+1).toFixed(2)}" x2="${(u(r2,c2)[0]+.5).toFixed(2)}" y2="${u(r2,c2)[1].toFixed(2)}"/>`).join('')}</svg>`+
-   LAY.L.map((l,r)=>[...Array(l).keys()].map(c=>`<div class="lb" style="left:calc(var(--u)*${u(r,c)[0].toFixed(2)});top:calc(var(--u)*${u(r,c)[1].toFixed(2)})">${LAY.mk[r]==c?`<small class="mn">${CIR[LAY.num[r]]}</small>`:''}</div>`).join('')).join('');
-  $('#ans').innerHTML=fin.map((v,i)=>`<div class="sl${i==fsel?' sel':''}" data-fs="${i}"><small>${CIR[i]}</small>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`).join('');
-  const mm=$('#memo');if(mm)mm.innerHTML=D.map((d,q)=>`<div class="mr"><b class="mq">Q${q+1}</b>${memo[q].map(v=>slot(v,solved[q]?' auto':'')).join('')}</div>`).join('');return}
+   LAY.L.map((l,r)=>[...Array(l).keys()].map(c=>`<div class="lb" style="left:calc(var(--u)*${u(r,c)[0].toFixed(2)});top:calc(var(--u)*${u(r,c)[1].toFixed(2)})">${LAY.mk[r]==c?`<small class="mn">${CIR[LAY.num[r]]}</small>`:''}${GAVE?GR(A[LAY.ord[r]][c],30):''}</div>`).join('')+(GAVE?`<small class="rq" style="left:calc(var(--u)*${(o[r]+l*1.2+.1).toFixed(2)});top:calc(var(--u)*${(u(r,0)[1]+.25).toFixed(2)})">Q${LAY.ord[r]+1}</small>`:'')).join('');
+  const fv=GAVE?FANS:fin;
+  $('#ans').innerHTML=fv.map((v,i)=>`<div class="sl${!GAVE&&i==fsel?' sel':''}${GAVE?' auto':''}"${GAVE?'':` data-fs="${i}"`}><small>${CIR[i]}</small>${v!==undefined?GR(v,40):'<span class="em"></span>'}</div>`).join('');
+  const mm=$('#memo');if(mm)mm.innerHTML=D.map((d,q)=>`<div class="mr"><b class="mq">Q${q+1}</b>${(GAVE?d.ans:memo[q]).map(v=>slot(v,solved[q]||GAVE?' auto':'')).join('')}</div>`).join('');return}
  const a=$('#ans');if(!a||cur<0)return;
  const v=solved[cur]?D[cur].ans:inp[cur];a.innerHTML=[...Array(D[cur].ans.length).keys()].map(i=>slot(v[i],solved[cur]?' auto':'')).join('')}
 // キーボード: 表と同じ配置(縦5×横11、黒マスは空き)。1キー=1文字。横スクロール、正方形キー
@@ -282,24 +302,67 @@ function check(){if(tEnd)return;
 function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),c=CONF;let best='';
  try{const k=c.mode=='std'?`kuuso_best_${GD}_${N}`:c.mode=='daily'?'kuuso_daily_'+c.seed:null;if(k){const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}}catch(e){}
  const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?jstDate():c.seed;
- const tw=`架空の言語でベタ謎解き！[${lab}] を ${t}（ランク${rk}）でクリアしました！`+(c.mode=='std'||c.mode=='seed'?`\nシード: ${sd}`:'')+'\n#架空言語ベタ謎解き';
+ const tw=`異世界謎解きRTA[${lab}] を ${t}（ランク${rk}）でクリアしました！`+(c.mode=='std'||c.mode=='seed'?`\nシード: ${sd}`:'')+'\n#異世界謎解きRTA';
  $('#tm').textContent=t;$('#game').hidden=true;$('#kb').hidden=true;$('#res').hidden=false;
  $('#res').innerHTML=`<div class="rc">${[...Array(26)].map(()=>`<i class="cf" style="left:${Math.random()*100}%;background:hsl(${Math.random()*360|0},80%,60%);animation-delay:${(Math.random()*2).toFixed(2)}s"></i>`).join('')}<div class="stamp">${rk}</div><div class="rl">${lab}</div><div class="rt">${t}</div><div class="rs">✗ ${miss}${best?`　🏆 ${best}`:''}</div>`+
   `<div class="sd">${c.mode=='daily'?'DAILY':'SEED'}<b id="sdv">${sd}</b></div><div class="rb"><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(tw)}">POST</a>${c.mode=='daily'?'':'<button id="cpy">COPY SEED</button>'}<button id="go">↻ MENU</button></div></div>`}
+// ---- メニューバー: タイトル画面=ルール / ゲーム中=ハンバーガー(ギブアップ・タイトルに戻る・閉じる) ----
+const MG='ギブアップ（答えを見る）',MT='タイトルに戻る';
+function showRules(){$('#rlc').innerHTML=typeof RULES_HTML!='undefined'?RULES_HTML:'<p>ルールが設定されていません(rules.js)</p>';$('#rl').hidden=false}
+function closeMenu(){$('#mn').hidden=true;armG=armT=false;$('#mg').textContent=MG;$('#mt').textContent=MT}
+function openMenu(){armG=armT=false;$('#mg').textContent=MG;$('#mt').textContent=MT;$('#mg').disabled=GAVE||!!tEnd;$('#mn').hidden=false}
+function giveUp(){GAVE=true;tEnd=performance.now();closeMenu();$('#kb').hidden=true;$('#dn').textContent=DN[GD]+' '+N+'Q ・ GIVE UP';render()}
+function toTitle(){closeMenu();INGAME=false;INK.on=false;GAVE=false;tEnd=0;$('#res').hidden=true;$('#game').hidden=true;$('#kb').hidden=true;$('#jg').hidden=true;$('#start').hidden=false;penUI();drawStart()}
 document.oninput=e=>{if(e.target.id!='seedin')return;SEEDIN=e.target.value.toUpperCase();saveCfg();const st=$('#seedst'),ev=$('#env');if(st){st.className='st';st.textContent=seedInfo()}if(ev)ev.className='env '+envColor()};
-document.onclick=e=>{
- if(e.target.closest('#env'))return launch();
- const fs=e.target.closest('[data-fs]');if(fs){if(!tEnd){fsel=+fs.dataset.fs;drawAns()}return}
- const b=e.target.closest('button');if(!b)return;
+document.onclick=e=>{const T=e.target;
+ const cl=T.closest('[data-close]');if(cl){if(cl.dataset.close=='rules')$('#rl').hidden=true;else closeMenu();return}
+ if(T.closest('#env'))return launch();
+ const fs=T.closest('[data-fs]');if(fs){if(!tEnd){fsel=+fs.dataset.fs;drawAns()}return}
+ const b=T.closest('button');if(!b)return;
+ if(b.id=='tbtn')return INGAME?openMenu():showRules();
+ if(b.id=='rlx'){$('#rl').hidden=true;return}
+ if(b.id=='mg'){if(!armG){armG=true;b.textContent='もう一度押すと答えを表示';return}return giveUp()}
+ if(b.id=='mt'){if(!armT){armT=true;b.textContent='もう一度押すとタイトルへ';return}return toTitle()}
+ if(b.id=='mc')return closeMenu();
+ if(b.dataset.pen)return penAct(b.dataset.pen);
  if(b.dataset.mode){MODE=b.dataset.mode;saveCfg();return drawStart()}
  if(b.dataset.d!==undefined){DIFF=+b.dataset.d;saveCfg();return drawStart()}
  if(b.dataset.n!==undefined){NQ=+b.dataset.n;saveCfg();return drawStart()}
  if(b.dataset.ty){const id=b.dataset.ty;if(ON[id]&&PUZ.filter(p=>ON[p.id]).length<2)return;ON[id]=!ON[id];saveCfg();return drawStart()}
- if(b.id=='go'){$('#res').hidden=true;$('#game').hidden=true;$('#kb').hidden=true;$('#top').hidden=true;$('#start').hidden=false;tEnd=0;drawStart();return}
+ if(b.id=='go')return toTitle();
  if(b.id=='cpy'){try{navigator.clipboard.writeText(CONF.seed);b.textContent='COPIED!'}catch(x){}return}
- if(tEnd)return;
+ if(tEnd&&!GAVE)return;
  if(b.dataset.t!==undefined){cur=+b.dataset.t;return render()}
+ if(GAVE)return;
  if(b.dataset.g!==undefined){put(+b.dataset.g);return drawAns()}
  if(b.id=='del'){if(cur>=0&&cur<N)inp[cur].pop();else fin[fsel]=undefined;return drawAns()}
  if(b.id=='ok')check()};
+// ---- 各紙に直接書き込むメモ(NORMAL/HARDのみ。EXPERTでは使えない)。座標は「マス(u)」単位で持つので、画面サイズが変わっても位置が合う ----
+const DRAW={},INK={on:false,color:'#d22',er:false};let HIST=[],armC=false;
+const penOK=()=>GD<2&&INGAME,penLive=()=>penOK()&&!GAVE&&!tEnd;
+function redraw(cv){const c=cv.getContext('2d'),dp=cv._dpr||1;c.setTransform(dp,0,0,dp,0,0);c.clearRect(0,0,cv.width,cv.height);
+ for(const s of DRAW[cv.dataset.k]||[]){c.globalCompositeOperation=s.e?'destination-out':'source-over';c.strokeStyle=s.c;c.lineWidth=s.w*CURU;c.lineCap=c.lineJoin='round';c.beginPath();
+  for(let i=0;i<s.p.length;i+=2){const x=s.p[i]*CURU,y=s.p[i+1]*CURU;i?c.lineTo(x,y):c.moveTo(x,y)}if(s.p.length==2)c.lineTo(s.p[0]*CURU+.01,s.p[1]*CURU);c.stroke()}}
+function syncDraw(){const dp=window.devicePixelRatio||1;document.querySelectorAll('.dv').forEach(cv=>{const el=cv.parentElement;cv.width=Math.round(el.offsetWidth*dp);cv.height=Math.round(el.offsetHeight*dp);cv._dpr=dp;redraw(cv)})}
+function attachDraw(){if(!penOK())return;
+ document.querySelectorAll('#pz .paper,#pz .cut').forEach((el,i)=>{const cv=document.createElement('canvas'),k=cur+':'+i;cv.className='dv';cv.dataset.k=k;if(!DRAW[k])DRAW[k]=[];el.appendChild(cv)});syncDraw()}
+function penUI(){const bar=$('#pen'),live=penLive();bar.hidden=!live;if(!live)INK.on=false;
+ const pz=$('#pz');if(INK.on)pz.classList.add('pen');else pz.classList.remove('pen');
+ document.querySelectorAll('#pen button').forEach(b=>{const a=b.dataset.pen,on=a=='tg'?INK.on:a=='er'?INK.er&&INK.on:/^c\d$/.test(a)?(INK.on&&!INK.er&&INK.color==['#222','#d22','#26c'][+a[1]]):false;b.classList[on?'add':'remove']('on')})}
+function penAct(a){
+ if(a=='tg')INK.on=!INK.on;
+ else if(/^c\d$/.test(a)){INK.color=['#222','#d22','#26c'][+a[1]];INK.er=false;INK.on=true}
+ else if(a=='er'){INK.er=!INK.er;INK.on=true}
+ else if(a=='un'){const i=HIST.map(h=>h.startsWith(cur+':')).lastIndexOf(true);if(i>=0){const k=HIST.splice(i,1)[0];DRAW[k].pop();document.querySelectorAll('.dv').forEach(redraw)}}
+ else if(a=='ck'){const b=document.querySelector('#pck');
+  if(!armC){armC=true;if(b)b.textContent='もう一度で全消去';setTimeout(()=>{armC=false;const x=document.querySelector('#pck');if(x)x.textContent='全消去'},3000);return}
+  armC=false;if(b)b.textContent='全消去';Object.keys(DRAW).filter(k=>k.startsWith(cur+':')).forEach(k=>DRAW[k]=[]);HIST=HIST.filter(h=>!h.startsWith(cur+':'));document.querySelectorAll('.dv').forEach(redraw)}
+ penUI()}
+function segDraw(cv,s,x0,y0,x1,y1){const c=cv.getContext('2d'),dp=cv._dpr||1;c.setTransform(dp,0,0,dp,0,0);c.globalCompositeOperation=s.e?'destination-out':'source-over';c.strokeStyle=s.c;c.lineWidth=s.w*CURU;c.lineCap=c.lineJoin='round';c.beginPath();c.moveTo(x0*CURU,y0*CURU);c.lineTo(x1*CURU,y1*CURU);c.stroke()}
+{const pz=$('#pz'),dv=e=>e.target.closest?e.target.closest('.dv'):null;
+ if(pz.addEventListener){
+  pz.addEventListener('pointerdown',e=>{const cv=dv(e);if(!cv||!INK.on||!penLive())return;e.preventDefault();cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);
+   const x=e.offsetX/CURU,y=e.offsetY/CURU,s={c:INK.er?'#000':INK.color,w:(INK.er?16:2.6)/CURU,e:INK.er,p:[x,y]};(DRAW[cv.dataset.k]=DRAW[cv.dataset.k]||[]).push(s);HIST.push(cv.dataset.k);cv._s=s;segDraw(cv,s,x,y,x+.001,y)});
+  pz.addEventListener('pointermove',e=>{const cv=dv(e);if(!cv||!cv._s)return;e.preventDefault();const s=cv._s,L=s.p.length,x=e.offsetX/CURU,y=e.offsetY/CURU;segDraw(cv,s,s.p[L-2],s.p[L-1],x,y);s.p.push(x,y)});
+  const up=e=>{const cv=dv(e);if(cv)cv._s=null};pz.addEventListener('pointerup',up);pz.addEventListener('pointercancel',up)}}
 drawStart();
