@@ -182,7 +182,7 @@ const stdSeed=(d,n)=>'NHE'[d]+n+'-'+rb(10),cusSeed=()=>'C+'+rb(10),parseStd=s=>{
 const seedKey=c=>`${c.mode=='cus'?'C':c.mode=='daily'?'D':'S'}|${c.seed}|${c.diff}|${c.n}|${c.types.map(t=>t.id).join(',')}`;   // 同じシードでも、モード系統・難易度・問題数・出題内容が違えば別の問題になる
 const jstDate=()=>new Date(Date.now()+9*36e5).toISOString().slice(0,10);
 const MODES=[['std','STANDARD','スタンダード'],['cus','CUSTOM','カスタム'],['seed','SEED','シード'],['daily','DAILY','デイリー']];
-let MODE='std',DIFF=1,NQ=5,ON={},SEEDIN='';PUZ.forEach(p=>ON[p.id]=true);
+let MODE='std',DIFF=1,NQ=5,ON={},SEEDIN='',DAILYD='';   // DAILYD: URLで指定されたデイリーの日付(YYYYMMDD)。空なら今日PUZ.forEach(p=>ON[p.id]=true);
 try{const s=JSON.parse(localStorage.getItem('kuuso_cfg')||'{}');if(MODES.some(m=>m[0]==s.mode))MODE=s.mode;if(s.diff>=0&&s.diff<=2)DIFF=s.diff;if([3,5,7].includes(s.n))NQ=s.n;if(s.on)PUZ.forEach(p=>{if(p.id in s.on)ON[p.id]=!!s.on[p.id]});SEEDIN=s.seed||''}catch(e){}
 const saveCfg=()=>{try{localStorage.setItem('kuuso_cfg',JSON.stringify({mode:MODE,diff:DIFF,n:NQ,on:ON,seed:SEEDIN}))}catch(e){}};
 const envColor=()=>MODE=='daily'?'white':MODE=='cus'?'blue':['brown','red','black'][MODE=='seed'&&parseStd(normSeed(SEEDIN))?parseStd(normSeed(SEEDIN)).diff:DIFF];
@@ -192,7 +192,7 @@ function panel(){const df=`<div class="row2">${DN.map((n,i)=>`<button data-d="${
  if(MODE=='std')return df+nq;
  if(MODE=='cus')return df+nq+`<div class="chips">${PUZ.map(p=>`<button data-ty="${p.id}" class="${ON[p.id]?'on':''}">${p.name}</button>`).join('')}</div>`+si;
  if(MODE=='seed')return si+df+nq+'<div class="st big2" style="font-size:12px">難易度・問題数は、シードに設定が含まれていないときに使われます</div>';
- return`<div class="st big2">HARD ・ 7Q ・ ${jstDate()}</div><div class="st">今日は全員が同じ問題です</div>`}
+ return`<div class="st big2">HARD ・ 7Q ・ ${(DAILYD||jstDate().replace(/-/g,'')).replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3')}</div><div class="st">今日は全員が同じ問題です</div>`}
 function setBar(){$('#tbtn').textContent=INGAME?'☰':'ルール';$('#tbtn').className=INGAME?'tb ham':'tb';
  if(!INGAME){const m=MODES.find(x=>x[0]==MODE)[1];$('#dn').textContent=MODE=='daily'?m+' ・ HARD 7Q':MODE=='seed'?m:`${m} ・ ${DN[DIFF]} ${NQ}Q`;$('#tm').textContent='';$('#pn').textContent=''}}
 function drawStart(){setBar();
@@ -201,7 +201,7 @@ function drawStart(){setBar();
  PARTS_READY.then(()=>{const t=$('#ti');if(t)t.innerHTML=[5,58,19,177,33,102,64].map(i=>GR(i,34)).join('')})}
 function mkConf(){
  if(MODE=='std')return{mode:'std',diff:DIFF,n:NQ,types:PUZ,seed:stdSeed(DIFF,NQ)};
- if(MODE=='daily')return{mode:'daily',diff:1,n:7,types:PUZ,seed:'DAILY'+jstDate().replace(/-/g,'')};
+ if(MODE=='daily'){const dd=DAILYD||jstDate().replace(/-/g,'');return{mode:'daily',diff:1,n:7,types:PUZ,seed:'DAILY'+dd,dd}}
  const s=normSeed(SEEDIN);
  if(MODE=='seed'){if(!s)return{err:'シードを入力してください'};const d=parseStd(s);return{mode:'seed',diff:d?d.diff:DIFF,n:d?d.n:NQ,types:PUZ,seed:s}}
  const types=PUZ.filter(p=>ON[p.id]);if(!types.length)return{err:'出題内容を1つ以上ONにしてください'};
@@ -299,13 +299,29 @@ function check(){if(tEnd)return;
  else if(GD<2&&cur>=0&&!solved[cur]){const a=D[cur].ans,v=inp[cur];
   if(v.length==a.length&&v.every((x,i)=>x==a[i])){solved[cur]=true;memo[cur]=a.slice();judge(true);render()}   // 正解→最終問題の画面のメモに自動で置く(誤答ペナルティなし)
   else{judge(false);shake(()=>{inp[cur]=[];drawAns()})}}}
+const FW=s=>s.replace(/[0-9]/g,c=>String.fromCharCode(c.charCodeAt(0)+0xFEE0)).replace(/:/g,'：').replace(/\./g,'．');   // 全角にして表示のズレを防ぐ
+const fmt2=ms=>{const t=Math.floor(ms/10),p=n=>String(n).padStart(2,'0'),s=Math.floor(t/100);return p(Math.floor(s/60))+':'+p(s%60)+'.'+p(t%100)};
+// 共有URLに載せる設定: m=モード s=シード d=難易度 n=問題数 t=出題内容のビット(カスタム) / デイリーは d=日付
+function mkQuery(c){const e=encodeURIComponent;if(c.mode=='daily')return`?m=daily&d=${c.dd}`;
+ const t=PUZ.reduce((a,p,i)=>a|(c.types.some(x=>x.id==p.id)?1<<i:0),0);
+ return c.mode=='cus'?`?m=cus&s=${e(c.seed)}&d=${c.diff}&n=${c.n}&t=${t}`:`?m=seed&s=${e(c.seed)}&d=${c.diff}&n=${c.n}`}
+function applyURL(qs){const q=new URLSearchParams(qs),m=q.get('m');if(!m)return false;
+ if(m=='daily'){const d=(q.get('d')||'').replace(/\D/g,'');MODE='daily';DAILYD=/^\d{8}$/.test(d)?d:''}
+ else if(m=='seed'||m=='cus'){MODE=m;SEEDIN=normSeed(q.get('s')||'');const d=+q.get('d'),n=+q.get('n'),t=+q.get('t');if(d>=0&&d<=2)DIFF=d;if([3,5,7].includes(n))NQ=n;if(m=='cus'&&t>0)PUZ.forEach((p,i)=>ON[p.id]=!!(t>>i&1))}
+ else return false;
+ saveCfg();return true}   // 共有URLを開くと、シードが入った状態でスタート画面が開く
+function tweetText(c,ms,miss,withSeed,url){const dd=c.dd||'',
+ head=c.mode=='daily'?`${dd.slice(2,4)}.${dd.slice(4,6)}.${dd.slice(6,8)} DAILY MODE を`:`${withSeed?`シード「${c.seed}」`:''}${DN[c.diff]} ${c.n}問 を`;
+ return`《 #異世界謎解きRTA 》\n\n${head}\n■━━━━━━━━━■\n    🕒${FW(fmt2(ms))}\n■━━━━━━━━━■\nでクリアした！\n(❌ミス…${miss}回)\n\n🔻あなたも${withSeed?'同じ問題':'異世界'}に挑戦！\n${url}`}
 function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),c=CONF;let best='';
  try{const k=c.mode=='std'?`kuuso_best_${GD}_${N}`:c.mode=='daily'?'kuuso_daily_'+c.seed:null;if(k){const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}}catch(e){}
- const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?jstDate():c.seed;
- const tw=`異世界謎解きRTA[${lab}] を ${t}（ランク${rk}）でクリアしました！`+(c.mode=='std'||c.mode=='seed'?`\nシード: ${sd}`:'')+'\n#異世界謎解きRTA';
+ const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?c.dd.replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3'):c.seed;
+ let base='';try{base=location.href.split(/[?#]/)[0]}catch(e){}
+ const tw=u=>'https://twitter.com/intent/tweet?text='+encodeURIComponent(u);
  $('#tm').textContent=t;$('#game').hidden=true;$('#kb').hidden=true;$('#res').hidden=false;
  $('#res').innerHTML=`<div class="rc">${[...Array(26)].map(()=>`<i class="cf" style="left:${Math.random()*100}%;background:hsl(${Math.random()*360|0},80%,60%);animation-delay:${(Math.random()*2).toFixed(2)}s"></i>`).join('')}<div class="stamp">${rk}</div><div class="rl">${lab}</div><div class="rt">${t}</div><div class="rs">✗ ${miss}${best?`　🏆 ${best}`:''}</div>`+
-  `<div class="sd">${c.mode=='daily'?'DAILY':'SEED'}<b id="sdv">${sd}</b></div><div class="rb"><a class="tw" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(tw)}">POST</a>${c.mode=='daily'?'':'<button id="cpy">COPY SEED</button>'}<button id="go">↻ MENU</button></div></div>`}
+  `<div class="sd">${c.mode=='daily'?'DAILY':'SEED'}<b id="sdv">${sd}</b></div><div class="rb"><a class="tw" target="_blank" rel="noopener" href="${tw(tweetText(c,ms,miss,false,base))}">共有</a><a class="tw tw2" target="_blank" rel="noopener" href="${tw(tweetText(c,ms,miss,true,base+mkQuery(c)))}">シード付きで共有</a></div>`+
+  `<div class="rb">${c.mode=='daily'?'':'<button id="cpy">COPY SEED</button>'}<button id="go">↻ MENU</button></div></div>`}
 // ---- メニューバー: タイトル画面=ルール / ゲーム中=ハンバーガー(ギブアップ・タイトルに戻る・閉じる) ----
 const MG='ギブアップ（答えを見る）',MT='タイトルに戻る';
 function showRules(){$('#rlc').innerHTML=typeof RULES_HTML!='undefined'?RULES_HTML:'<p>ルールが設定されていません(rules.js)</p>';$('#rl').hidden=false}
@@ -325,7 +341,7 @@ document.onclick=e=>{const T=e.target;
  if(b.id=='mt'){if(!armT){armT=true;b.textContent='もう一度押すとタイトルへ';return}return toTitle()}
  if(b.id=='mc')return closeMenu();
  if(b.dataset.pen)return penAct(b.dataset.pen);
- if(b.dataset.mode){MODE=b.dataset.mode;saveCfg();return drawStart()}
+ if(b.dataset.mode){MODE=b.dataset.mode;DAILYD='';saveCfg();return drawStart()}
  if(b.dataset.d!==undefined){DIFF=+b.dataset.d;saveCfg();return drawStart()}
  if(b.dataset.n!==undefined){NQ=+b.dataset.n;saveCfg();return drawStart()}
  if(b.dataset.ty){const id=b.dataset.ty;if(ON[id]&&PUZ.filter(p=>ON[p.id]).length<2)return;ON[id]=!ON[id];saveCfg();return drawStart()}
@@ -365,4 +381,5 @@ function segDraw(cv,s,x0,y0,x1,y1){const c=cv.getContext('2d'),dp=cv._dpr||1;c.s
    const x=e.offsetX/CURU,y=e.offsetY/CURU,s={c:INK.er?'#000':INK.color,w:(INK.er?16:2.6)/CURU,e:INK.er,p:[x,y]};(DRAW[cv.dataset.k]=DRAW[cv.dataset.k]||[]).push(s);HIST.push(cv.dataset.k);cv._s=s;segDraw(cv,s,x,y,x+.001,y)});
   pz.addEventListener('pointermove',e=>{const cv=dv(e);if(!cv||!cv._s)return;e.preventDefault();const s=cv._s,L=s.p.length,x=e.offsetX/CURU,y=e.offsetY/CURU;segDraw(cv,s,s.p[L-2],s.p[L-1],x,y);s.p.push(x,y)});
   const up=e=>{const cv=dv(e);if(cv)cv._s=null};pz.addEventListener('pointerup',up);pz.addEventListener('pointercancel',up)}}
+try{applyURL(location.search);if(history.replaceState)history.replaceState(null,'',location.href.split(/[?#]/)[0])}catch(e){}
 drawStart();

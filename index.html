@@ -1,6 +1,12 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <title>異世界謎解きRTA</title>
+<meta name="description" content="見たことのない文字だけで解く、ベタ謎解きのタイムアタック。">
+<!-- ★ Twitterカード/OGP。サイトのURLが違う場合は、下の3か所(og:url / og:image / twitter:image)のURLを直す。画像は images/ogp.png -->
+<meta property="og:type" content="website"><meta property="og:site_name" content="異世界謎解きRTA"><meta property="og:title" content="異世界謎解きRTA">
+<meta property="og:description" content="見たことのない文字だけで解く、ベタ謎解きのタイムアタック。">
+<meta property="og:url" content="https://norate-jp.github.io/"><meta property="og:image" content="https://norate-jp.github.io/images/ogp.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="異世界謎解きRTA"><meta name="twitter:description" content="見たことのない文字だけで解く、ベタ謎解きのタイムアタック。"><meta name="twitter:image" content="https://norate-jp.github.io/images/ogp.png">
 <link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png">
 <style>
 :root{--u:36px;--ks:52px}
@@ -30,7 +36,7 @@ background:linear-gradient(100deg,#c0392b,#e67e22 40%,#2c6fbb 80%);-webkit-backg
 .env.blue{--e1:#5b8fe0;--e2:#3d6fc2;--et:#fff}.env.white{--e1:#fbfbfb;--e2:#e3e3e3;--et:#555}
 .env .bodyx{position:absolute;inset:0;background:var(--e1);border-radius:6px;border:1px solid #0002}
 .env .flap{position:absolute;left:0;top:0;border-left:155px solid transparent;border-right:155px solid transparent;border-top:118px solid var(--e2);transform-origin:top;transition:transform .6s;z-index:2}
-.env.open .flap{transform:rotateX(180deg);z-index:0}.env .lab{position:absolute;top:96px;width:100%;text-align:center;color:var(--et);z-index:1}
+.env.open .flap{transform:rotateX(180deg);z-index:0}.env .lab{position:absolute;top:138px;width:100%;text-align:center;color:var(--et);z-index:1}
 .env small{display:block;margin-top:8px;font-weight:900;letter-spacing:.2em;animation:bl 1.2s infinite}@keyframes bl{50%{opacity:.35}}
 /* ゲーム画面 */
 #tabs{display:grid;grid-template-columns:repeat(var(--tn,8),1fr);gap:4px;max-width:calc(var(--tn,8)*64px);margin:12px auto 0}
@@ -95,8 +101,8 @@ background:linear-gradient(100deg,#c0392b,#e67e22 40%,#2c6fbb 80%);-webkit-backg
 .rc .rl{font-weight:900;letter-spacing:.08em;color:#666}.rc .rt{font-family:monospace;font-weight:700;font-size:54px;line-height:1.1;margin:4px 0}.rc .rs{color:#555;font-weight:700}
 .rc .sd{margin:12px 0 4px;font-size:12px;color:#666}.rc .sd b{display:block;font:700 22px monospace;letter-spacing:.1em;color:#222;user-select:all}
 .rb{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}.rb a,.rb button{font-weight:700}
-a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-decoration:none}
-.stamp{display:inline-block;border:7px solid #c22;color:#c22;border-radius:50%;width:100px;height:100px;line-height:86px;font:900 62px Georgia,serif;transform:rotate(-12deg);animation:st .6s .3s both}
+a.tw{color:#fff;background:#1d9bf0;padding:8px 16px;border-radius:20px;text-decoration:none;font-weight:700}a.tw2{background:#0f1419}
+.stamp{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border:7px solid #c22;color:#c22;border-radius:50%;width:100px;height:100px;line-height:1;font:900 62px/1 Georgia,serif;transform:rotate(-12deg);animation:st .6s .3s both}
 @keyframes st{from{transform:scale(3.2) rotate(-12deg);opacity:0}}
 .cf{position:absolute;top:-12px;width:9px;height:14px;opacity:.9;animation:cf 2.6s linear infinite}@keyframes cf{to{transform:translateY(560px) rotate(720deg)}}
 body::after{content:"";position:fixed;right:-40px;top:170px;z-index:-1;width:190px;height:14px;transform:rotate(-24deg);border-radius:3px 7px 7px 3px;pointer-events:none;
@@ -129,4 +135,4 @@ background:linear-gradient(90deg,#d4e0e8 0 6%,#c96 6% 12%,#e8b923 12% 82%,#e9c9a
 <div id="mn" hidden><div class="mbg" data-close="menu"></div><div class="mp"><button id="mg">ギブアップ（答えを見る）</button><button id="mt">タイトルに戻る</button><button id="mc">メニューを閉じる</button></div></div>
 <div id="rl" hidden><div class="mbg" data-close="rules"></div><div class="rcard"><div id="rlc"></div><button id="rlx">閉じる</button></div></div>
 <div id="cdn" hidden></div><div id="jg" hidden></div><div id="res" hidden></div>
-<script src="rules.js?v=18"></script><script src="parts.js?v=18"></script><script src="game.js?v=18"></script></body></html>
+<script src="rules.js?v=19"></script><script src="parts.js?v=19"></script><script src="game.js?v=19"></script></body></html>
