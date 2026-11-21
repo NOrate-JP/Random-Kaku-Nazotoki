@@ -312,7 +312,7 @@ function applyURL(qs){const q=new URLSearchParams(qs),m=q.get('m');if(!m)return 
  saveCfg();return true}   // 共有URLを開くと、シードが入った状態でスタート画面が開く
 function tweetText(c,ms,miss,withSeed,url){const dd=c.dd||'',
  head=c.mode=='daily'?`${dd.slice(2,4)}.${dd.slice(4,6)}.${dd.slice(6,8)} DAILY MODE を`:`${withSeed?`シード「${c.seed}」`:''}${DN[c.diff]} ${c.n}問 を`;
- return`《 #異世界謎解きRTA 》\n\n${head}\n■━━━━━━━━━■\n    🕒${FW(fmt2(ms))}\n■━━━━━━━━━■\nでクリアした！\n(❌ミス…${miss}回)\n\n🔻あなたも${withSeed?'同じ問題':'異世界'}に挑戦！\n${url}`}
+ return`《 #異世界謎解きRTA 》\n\n${head}\n■━━━━━━━━━■\n 🕒${FW(fmt2(ms))}\n■━━━━━━━━━■\nでクリアした！\n(❌ミス…${miss}回)\n\n🔻あなたも${withSeed?'同じ問題':'異世界'}に挑戦！\n${url}`}
 function finish(){const ms=tEnd-t0+pen*1000,t=fmt(ms),c=CONF;let best='';
  try{const k=c.mode=='std'?`kuuso_best_${GD}_${N}`:c.mode=='daily'?'kuuso_daily_'+c.seed:null;if(k){const b=+localStorage.getItem(k)||0;if(!b||ms<b){localStorage.setItem(k,ms);best='NEW!'}else best=fmt(b)}}catch(e){}
  const th=RANKQ[GD].map(x=>(x*N+60)*1000),rk=ms<th[0]?'S':ms<th[1]?'A':ms<th[2]?'B':'C',lab=`${MODES.find(m=>m[0]==c.mode)[1]} ・ ${DN[GD]} ${N}Q`,sd=c.mode=='daily'?c.dd.replace(/(\d{4})(\d\d)(\d\d)/,'$1-$2-$3'):c.seed;
